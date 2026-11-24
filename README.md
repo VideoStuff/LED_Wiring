@@ -39,7 +39,7 @@ Wiring starts **hand drawn**: the wall starts unwired and you draw each data run
 
 ### Power
 - **120 V**, **208 V 1-phase** or **208 V 3-phase**, breaker size (default 20 A), safety factor (default 80%) and power factor (default 1.0).
-- **Hand drawn** or **Automatic** (same pattern choices as data). Circuits are sized on **max** watts so a full-white frame can't trip a breaker. Power cables are drawn **red and yellow, alternating along the wall** so neighboring circuits never share a color. Each circuit is labeled `P1`, `P2`… with its amps, and is given a leg (L1, L2, L3 or a pair for 208 V).
+- **Hand drawn** or **Automatic** (same pattern choices as data). Circuits are sized on **max** watts so a full-white frame can't trip a breaker. Power cables are colored **by distro drop**: every circuit on a drop shares one color, and drops alternate **red and yellow** so neighboring drops never share a color (with 6 circuits per drop, P1–P6 are one color, P7–P12 the other). The first circuit of each drop is tagged `DROP 1`, `DROP 2`…, and the circuit schedule lists each circuit's drop. Each circuit is labeled `P1`, `P2`… with its amps, and is given a leg (L1, L2, L3 or a pair for 208 V).
 - Shows total watts and amps at max and typical load, the load on each leg, and distro drops (default 6 circuits each, for Socapex).
 
 ### Diagram
