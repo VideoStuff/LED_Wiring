@@ -13,7 +13,7 @@
 :root{
   --bg:#ECEFF3; --panel:#FFFFFF; --ink:#141920; --muted:#5A6473; --line:#D3D9E1; --field:#F6F8FA;
   --accent:#0A6C97; --accent-ink:#FFFFFF; --accent-soft:#DCEEF6; --danger:#B3261E; --warn:#B45309;
-  --stage:#08090B; --stage-grid:#232932; --stage-ink:#EEF1F5; --stage-muted:#8E98A6; --cab:#3D4755; --cab-line:#AEB9C7; --cabnum:#C3CBD6;
+  --stage:#08090B; --stage-grid:#232932; --stage-ink:#EEF1F5; --stage-muted:#8E98A6; --cab:#3D4755; --cab-line:#AEB9C7; --cabnum:#C3CBD6; --gear:#151A21; --gear-line:#D5DCE5; --fiber:#F2C230;
   --f-display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
@@ -22,11 +22,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0E1115; --panel:#161A20; --ink:#E5E9EE; --muted:#8C96A4; --line:#29303A; --field:#1C2128;
   --accent:#4DB8E4; --accent-ink:#06222F; --accent-soft:#163242; --danger:#F2867E; --warn:#F5B454;
-  --stage:#000000; --stage-grid:#181D24; --cab:#38424F; --cab-line:#A3AFBE; --cabnum:#BCC5D0; color-scheme:dark}}
+  --stage:#000000; --stage-grid:#181D24; --cab:#38424F; --cab-line:#A3AFBE; --cabnum:#BCC5D0; --gear:#11151B; --gear-line:#CDD5DF; --fiber:#F2C230; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E1115; --panel:#161A20; --ink:#E5E9EE; --muted:#8C96A4; --line:#29303A; --field:#1C2128;
   --accent:#4DB8E4; --accent-ink:#06222F; --accent-soft:#163242; --danger:#F2867E; --warn:#F5B454;
-  --stage:#000000; --stage-grid:#181D24; --cab:#38424F; --cab-line:#A3AFBE; --cabnum:#BCC5D0; color-scheme:dark}
+  --stage:#000000; --stage-grid:#181D24; --cab:#38424F; --cab-line:#A3AFBE; --cabnum:#BCC5D0; --gear:#11151B; --gear-line:#CDD5DF; --fiber:#F2C230; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -142,6 +142,10 @@ label.f,div.f{display:flex;flex-direction:column;gap:3px;font-size:11px;font-wei
 .unwired{fill:none;stroke:var(--warn);stroke-opacity:.7}
 .cabnum{fill:var(--cabnum);font-family:var(--f-mono)}
 .axis{fill:var(--stage-muted);font-family:var(--f-mono)}
+.gear-box{fill:var(--gear);stroke:var(--gear-line)}
+.gear-t{fill:var(--stage-ink);font-family:var(--f-display);font-weight:700;letter-spacing:.04em}
+.gear-port{fill:none;stroke:var(--cab-line)}
+.gear-pt{font-family:var(--f-mono);font-weight:700}
 .viewtag{fill:var(--stage-muted);font-family:var(--f-display);font-weight:600;letter-spacing:.12em}
 .pill-t{font-family:var(--f-mono);font-weight:700;fill:#0B0E12}
 
@@ -186,7 +190,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
   /* The print page is light whatever the screen theme, so it reads on paper and in PDF viewers. */
   :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
     --bg:#fff; --panel:#fff; --ink:#000; --muted:#444; --line:#bbb; --field:#f3f3f3;
-    --stage:#ffffff; --stage-ink:#000; --stage-muted:#555; --cab:#eef0f3; --cab-line:#5f6670; --cabnum:#555; color-scheme:light}
+    --stage:#ffffff; --stage-ink:#000; --stage-muted:#555; --cab:#eef0f3; --cab-line:#5f6670; --cabnum:#555; --gear:#ffffff; --gear-line:#222; --fiber:#C99A00; color-scheme:light}
   @page{size:landscape;margin:10mm}
   body{padding:0;height:auto!important;overflow:visible!important;display:block!important;font-size:11px;background:#fff}
   header.top,main.work,dialog,#tipPop{display:none!important}
@@ -259,7 +263,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
     </section>
 
     <section class="panel">
-      <div class="panel-head"><h2>Processing<button type="button" class="info" data-tip="Brompton Tessera SX40: four 10G fiber outputs, each feeding one Tessera XD, which splits it into ten 1G Cat6 ports (40 ports per SX40). Port capacity is the published 525,000 px at 8-bit 60 Hz; it scales with bit depth and frame rate." aria-label="About processing">i</button></h2></div>
+      <div class="panel-head"><h2>Processing<button type="button" class="info" data-tip="Brompton Tessera SX40: four 10G fiber outputs, each feeding one Tessera XD, which splits it into ten 1G Cat6 ports (40 ports per SX40). The XDs are lettered A, B, C, D after the SX40 output that feeds them. With data redundancy, A is main and B its backup, C main and D its backup: each run leaves on a main XD port and its backup return line comes back on the same port number of the backup XD. Port capacity is the published 525,000 px at 8-bit 60 Hz; it scales with bit depth and frame rate." aria-label="About processing">i</button></h2></div>
       <div class="stack">
         <label class="f">Processor<select id="procSel" data-k="procId"></select></label>
         <div id="customProc" class="stack" hidden>
@@ -288,7 +292,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
           <label class="f">Start side (rear)<select data-k="dataStart"><option value="left">Rear left</option><option value="right">Rear right</option></select></label>
         </div>
         <label class="switch"><input type="checkbox" data-k="dataFill"> Fill each port (ignore row/column ends)</label>
-        <label class="switch"><input type="checkbox" data-k="dataRed"> Data redundancy (backup return lines)</label>
+        <label class="switch"><input type="checkbox" data-k="dataRed"> Data redundancy (backup XD + return lines)</label>
         <label class="f">Max cabinets per run (optional)<input inputmode="numeric" data-k="maxRun" data-num placeholder="No limit"></label>
         <dl class="readout" id="dataSpec"></dl>
       </div>
@@ -322,6 +326,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
       <div class="stage-bar">
         <div class="seg" role="group" aria-label="Layers"><button type="button" data-k="layer" data-v="data">Data only</button><button type="button" data-k="layer" data-v="power">Power only</button><button type="button" data-k="layer" data-v="combined">Combined</button></div>
         <label class="switch"><input type="checkbox" data-k="labels"> Labels / port load</label>
+        <label class="switch"><input type="checkbox" data-k="gear"> Processors &amp; XDs</label>
         <div class="seg" role="group" aria-label="View"><button type="button" data-k="view" data-v="rear">Rear view</button><button type="button" data-k="view" data-v="front">Front view</button></div>
         <div class="zoom"><span id="zPct" class="mono">100%</span><div class="seg" role="group" aria-label="Zoom"><button type="button" id="zOut" title="Zoom out (−)" aria-label="Zoom out">−</button><button type="button" id="zFit" title="Fit the wall (0)">Fit</button><button type="button" id="zIn" title="Zoom in (+)" aria-label="Zoom in">+</button></div><button type="button" class="info" data-tip="Zoom with the scroll wheel, a trackpad pinch, two fingers on a touch screen, the + and − buttons or the + and − keys. Move around a zoomed diagram by dragging with the Pan tool, the middle mouse button, or while holding the space bar. Fit (or the 0 key) shows the whole wall." aria-label="About zoom">i</button></div>
       </div>
@@ -381,7 +386,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 
 <script>
 'use strict';
-const APP_VERSION = '1.02';
+const APP_VERSION = '1.03';
 
 /* =====================================================================
    1. LIBRARY DATA
@@ -416,7 +421,7 @@ const DEFAULTS = {
   volt:'208-3', breaker:20, safety:80, pf:1, powPat:'vsnake', powStart:'left', powFill:false, maxJump:'', perDrop:6,
   layer:'combined', labels:true, view:'rear', tab:'gear', theme:'auto',
   // Wiring starts hand drawn. manual.data / manual.power are lists of chains, each a list of [column, row] (front-numbered, from 0).
-  dataMode:'manual', powMode:'manual', drawLayer:'data', tool:'draw', manual:{data:[], power:[]},
+  gear:true, dataMode:'manual', powMode:'manual', drawLayer:'data', tool:'draw', manual:{data:[], power:[]},
 };
 let S = load(STORE, {});
 S = mergeState(S);
@@ -521,7 +526,11 @@ function calc(){
      Each run takes one 1G port, or two with data redundancy (the backup return line needs its own port). */
   const isXd = proc.mode === 'xd';
   const ppx = Math.max(1, Math.floor(pos(proc.portsPerXd, 10)));
-  const portsPerProc = isXd ? Math.max(1, Math.floor(pos(proc.trunks, 1))) * ppx : Math.max(1, Math.floor(pos(proc.ports, 1)));
+  const trunks = Math.max(1, Math.floor(pos(proc.trunks, 1)));
+  // With data redundancy the XDs work in pairs (A main + B backup, C main + D backup), so an odd last trunk goes unused.
+  const usableTrunks = isXd && S.dataRed ? Math.max(2, trunks - trunks % 2) : trunks;
+  if (isXd && S.dataRed && trunks < 2) warns.push({err:true, t:'Data redundancy with XDs needs at least two 10G outputs per processor (a main and a backup XD).'});
+  const portsPerProc = isXd ? usableTrunks * ppx : Math.max(1, Math.floor(pos(proc.ports, 1)));
   const pixelCap = pos(proc.pixelCap) || Infinity;
   const need = S.dataRed ? 2 : 1;
   const procs = []; let cur = null;
@@ -529,18 +538,30 @@ function calc(){
     if (!cur || cur.px + r.px > pixelCap || cur.ports + need > portsPerProc){ cur = {i: procs.length, runs: [], px: 0, ports: 0}; procs.push(cur); }
     cur.runs.push(r); cur.px += r.px; cur.ports += need; r.proc = cur.i;
   }
-  // Port numbering inside each processor: primaries first, then the backup return lines, packed onto as few XDs as possible.
-  let xdBase = 0;
+  // Ports, Brompton style: each processor's XDs are lettered A, B, C, D after the 10G output that feeds them.
+  // Without data redundancy every XD is a main XD. With it they pair up: A main / B backup, C main / D backup,
+  // and a run's backup return line uses the same port number on the backup XD (D1 on A-1, its backup on B-1).
+  // Direct-port processors number their 1G ports 1, 2, 3… with the backups after the primaries.
+  let xdTotal = 0;
   for (const p of procs){
     const k = p.runs.length;
-    const name = idx => isXd ? {xd: xdBase + Math.floor(idx / ppx) + 1, port: idx % ppx + 1} : {xd: 0, port: idx + 1};
-    p.runs.forEach((r, j) => { r.port = name(j); if (S.dataRed) r.bport = name(k + j); });
-    p.xds = isXd ? Math.ceil(p.ports / ppx) : 0;
-    p.xdFirst = xdBase + 1; xdBase += p.xds;
+    p.runs.forEach((r, j) => {
+      if (isXd){
+        const grp = Math.floor(j / ppx), port = j % ppx + 1;
+        if (S.dataRed){ r.port = {proc: p.i, xdi: 2 * grp, letter: xdLetter(2 * grp), port}; r.bport = {proc: p.i, xdi: 2 * grp + 1, letter: xdLetter(2 * grp + 1), port}; }
+        else r.port = {proc: p.i, xdi: grp, letter: xdLetter(grp), port};
+      } else {
+        r.port = {proc: p.i, xdi: -1, port: j + 1};
+        if (S.dataRed) r.bport = {proc: p.i, xdi: -1, port: k + j + 1};
+      }
+    });
+    p.xds = isXd ? Math.ceil(k / ppx) * (S.dataRed ? 2 : 1) : 0;
+    p.xdList = Array.from({length: p.xds}, (_, i) => ({i, letter: xdLetter(i), role: S.dataRed && i % 2 ? 'backup' : 'main'}));
+    xdTotal += p.xds;
     p.pixLoad = isFinite(pixelCap) ? p.px / pixelCap : 0;
     p.portLoad = p.ports / portsPerProc;
   }
-  const xdTotal = xdBase, primProcs = procs.length, totalProcs = primProcs * (S.procRed ? 2 : 1);
+  const primProcs = procs.length, totalProcs = primProcs * (S.procRed ? 2 : 1);
   const portsUsed = runs.length * need;
   if (wall.px > 0 && isFinite(pixelCap) && pxCab > pixelCap) warns.push({err:true, t:'One cabinet has more pixels than the processor limit.'});
 
@@ -594,7 +615,7 @@ function calc(){
   const perDrop = Math.max(1, Math.floor(pos(S.perDrop, 6)));
   const drops = Math.ceil(circuits.length / perDrop);
 
-  return {P, proc, pxCab, wall, portCap, cabPerPort, runs, procs, primProcs, totalProcs, xdTotal, portsUsed, portsPerProc, pixelCap, isXd, ppx,
+  return {P, proc, trunks, pxCab, wall, portCap, cabPerPort, runs, procs, primProcs, totalProcs, xdTotal, portsUsed, portsPerProc, pixelCap, isXd, ppx,
     V, pf, breaker, safety, usableA, usableW, cabPerCirc, circuits, legs, W, amps, drops, perDrop, warns};
 }
 
@@ -627,7 +648,10 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '
 function ftIn(mm){ const inch = mm / 25.4; let f = Math.floor(inch / 12), i = Math.round((inch - f * 12) * 10) / 10; if (i >= 12){ f++; i = 0; } return `${f}' ${i}"`; }
 const meters = mm => fx(mm / 1000, 2) + ' m';
 const cabName = c => `${c.c + 1},${c.r + 1}`;
-const portLabel = (p, R) => !p ? '—' : R.isXd ? `XD${p.xd}·${p.port}` : `Port ${p.port}`;
+const xdLetter = i => i < 26 ? String.fromCharCode(65 + i) : 'X' + (i + 1);
+// "XD A-3" (or "#2 XD A-3" when there is more than one processor), or "Port 5" for direct ports.
+const portLabel = (p, R) => !p ? '—' : (R.procs.length > 1 ? `#${p.proc + 1} ` : '') + (R.isXd ? `XD ${p.letter}-${p.port}` : `Port ${p.port}`);
+const portShort = (p, R) => !p ? '' : (R.procs.length > 1 ? `${p.proc + 1}` : '') + (R.isXd ? `${p.letter}${p.port}` : `P${p.port}`);
 const voltName = v => v === '120' ? '120 V' : v === '208-1' ? '208 V 1-phase' : '208 V 3-phase';
 // Distinct colors per run / circuit, spaced by the golden angle so neighbors never look alike.
 const dataColor = i => `hsl(${(195 + i * 137.508) % 360} 80% 56%)`;
@@ -646,8 +670,15 @@ function wallSvg(R, o){
   R.runs.forEach(r => r.cells.forEach((c, k) => runOf[c.c + ',' + c.r] = {r, k}));
   R.circuits.forEach(p => p.cells.forEach((c, k) => circOf[c.c + ',' + c.r] = {p, k}));
   const fs = u * 0.13;
-  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-m} ${-m} ${W + 2 * m} ${H + 2 * m}" data-full="${-m} ${-m} ${W + 2 * m} ${H + 2 * m}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${o.view === 'rear' ? 'Rear' : 'Front'} view wiring diagram, ${cols} by ${rows} cabinets">`;
-  s += `<rect class="w-bg" x="${-m}" y="${-m}" width="${W + 2 * m}" height="${H + 2 * m}"/>`;
+  const center = (c, off) => [X(c.c) + cw / 2 + off, c.r * ch + ch / 2 + off];
+  const dOff = both ? -u * 0.14 : 0;
+  const gear = o.gear && showData && R.runs.length ? gearSvg(R, {W, H, u, fs,
+    startPt: r => center(r.cells[0], dOff), endPt: r => center(r.cells[r.cells.length - 1], dOff + u * 0.07)}) : null;
+  const vx = gear ? Math.min(-m, gear.minX) : -m, vw = (gear ? Math.max(W + m, gear.maxX) : W + m) - vx;
+  const vh = (gear ? gear.maxY : H + m) + m;
+  const vb = `${vx} ${-m} ${vw} ${vh}`;
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" data-full="${vb}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${o.view === 'rear' ? 'Rear' : 'Front'} view wiring diagram, ${cols} by ${rows} cabinets">`;
+  s += `<rect class="w-bg" x="${vx}" y="${-m}" width="${vw}" height="${vh}"/>`;
   // Cabinets, tinted by run or circuit when one layer is shown on its own.
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++){
     const key = c + ',' + r, d = runOf[key], p = circOf[key];
@@ -663,9 +694,9 @@ function wallSvg(R, o){
   // Column numbers above, row numbers on the left (front numbering), and which side we're looking at.
   for (let c = 0; c < cols; c++) s += `<text class="axis" x="${X(c) + cw / 2}" y="${-u * 0.12}" font-size="${fs}" text-anchor="middle">${c + 1}</text>`;
   for (let r = 0; r < rows; r++) s += `<text class="axis" x="${-u * 0.12}" y="${r * ch + ch / 2 + fs * 0.35}" font-size="${fs}" text-anchor="end">${r + 1}</text>`;
-  s += `<text class="viewtag" x="${W / 2}" y="${H + m * 0.55}" font-size="${fs * 1.1}" text-anchor="middle">${o.view === 'rear' ? 'REAR VIEW · AS SEEN FROM BEHIND THE WALL' : 'FRONT VIEW · AS SEEN BY THE AUDIENCE'}</text>`;
+  s += `<text class="viewtag" x="${W / 2}" y="${-m * 0.6}" font-size="${fs * 1.1}" text-anchor="middle">${o.view === 'rear' ? 'REAR VIEW · AS SEEN FROM BEHIND THE WALL' : 'FRONT VIEW · AS SEEN BY THE AUDIENCE'}</text>`;
 
-  const center = (c, off) => [X(c.c) + cw / 2 + off, c.r * ch + ch / 2 + off];
+  if (gear) s += gear.cables;
   const chevrons = (pts, color, size) => {
     let t = '';
     for (let i = 0; i + 1 < pts.length; i++){
@@ -693,7 +724,7 @@ function wallSvg(R, o){
     }
   }
   if (showData){
-    const off = both ? -u * 0.14 : 0;
+    const off = dOff;
     for (const r of R.runs){
       const col = dataColor(r.i), pts = r.cells.map(c => center(c, off));
       if (S.dataRed){
@@ -707,12 +738,108 @@ function wallSvg(R, o){
       s += `<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="${u * 0.065}" fill="${col}" stroke="#000" stroke-width="${u * 0.012}"><title>${r.label} data in</title></circle>`;
       if (o.labels){
         const c0 = r.cells[0], cl = r.cells[r.cells.length - 1];
-        labels += pill(X(c0.c) + u * 0.05, c0.r * ch + u * 0.05, `${r.label} · ${pct(r.load)}`, col);
+        labels += pill(X(c0.c) + u * 0.05, c0.r * ch + u * 0.05, `${r.label}${o.gear ? ' · ' + portShort(r.port, R) : ''} · ${pct(r.load)}`, col);
         if (S.dataRed) labels += pill(X(cl.c) + cw - u * 0.05, cl.r * ch + u * 0.05 + (cl === c0 ? fs * 1.6 : 0), `${r.label}R`, col, 'end');
       }
     }
   }
-  return s + labels + '</svg>';
+  return s + labels + (gear ? gear.boxes : '') + '</svg>';
+}
+
+/* The processors and XD boxes, drawn under the wall: processors at the bottom, 10G fiber up to the XDs,
+   and a Cat6 home run from every XD port to the cabinet where its run starts (backups dashed, to the last cabinet).
+   Home runs drop into a cable channel just under the wall, each in its own lane, then up the column to their cabinet. */
+function gearSvg(R, g){
+  const {W, H, u, fs} = g, red = S.dataRed, isXd = R.isXd, multi = R.procs.length > 1;
+  const short = R.proc.short || R.proc.name;
+  const portW = u * 0.3, portH = u * 0.24, pg = u * 0.05, pad = u * 0.1;
+  const slots = isXd ? R.ppx : R.portsPerProc;
+  const boxW = n => n * portW + (n - 1) * pg + 2 * pad;
+  const titleH = fs * 1.5, xdW = boxW(slots), xdH = pad * 2 + portH + titleH;
+  const outs = isXd ? Math.max(1, R.trunks) : 0;
+  const procW = isXd ? Math.max(boxW(outs), short.length * fs * 0.62 + fs * 4 + 2 * pad) : xdW, procH = xdH;
+  const gapX = u * 0.3, groupGap = u * 0.9, nProc = S.procRed ? 2 : 1;
+
+  const cables = [];
+  for (const r of R.runs){
+    cables.push({r, port: r.port, to: g.startPt(r), b: false});
+    if (red && r.bport) cables.push({r, port: r.bport, to: g.endPt(r), b: true});
+  }
+  const lane = u * 0.07, chanTop = H + u * 0.3, chanH = cables.length * lane;
+  const xdY = chanTop + chanH + u * 0.25, procY = isXd ? xdY + xdH + u * 0.9 : xdY;
+
+  const groups = R.procs.map(p => {
+    const topW = isXd ? p.xds * xdW + Math.max(0, p.xds - 1) * gapX : 0, botW = nProc * procW + (nProc - 1) * gapX;
+    return {p, topW, botW, w: Math.max(topW, botW)};
+  });
+  const total = groups.reduce((a, gr) => a + gr.w, 0) + (groups.length - 1) * groupGap;
+  const x0 = W / 2 - total / 2;
+  let boxes = '', fiber = '', x = x0;
+  const portAt = {}, box = (bx, by, w, h, title, dashed) =>
+    `<rect class="gear-box" x="${bx}" y="${by}" width="${w}" height="${h}" rx="${u * 0.04}" stroke-width="${u * 0.014}"${dashed ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}/>`
+    + `<text class="gear-t" x="${bx + pad}" y="${by + h - pad * 0.9}" font-size="${fs * 0.95}">${esc(title)}</text>`;
+  const portBox = (px, py, key) => { portAt[key] = [px, py]; };
+
+  for (const gr of groups){
+    const p = gr.p, procBoxes = [];
+    const pbx = x + (gr.w - gr.botW) / 2;
+    for (let b = 0; b < nProc; b++) procBoxes.push({x: pbx + b * (procW + gapX), backup: b === 1});
+    for (const pb of procBoxes){
+      boxes += box(pb.x, procY, procW, procH, `${short}${multi ? ' #' + (p.i + 1) : ''}${pb.backup ? ' · backup' : ''}`, pb.backup);
+      if (!isXd){
+        if (!pb.backup) for (let q = 1; q <= slots; q++) portBox(pb.x + pad + (q - 1) * (portW + pg), procY + pad, `${p.i}|-1|${q}`);
+        continue;
+      }
+      // The processor's 10G outputs, lettered to match the XD each one feeds.
+      for (let k = 0; k < outs; k++){
+        const ox = pb.x + pad + k * (portW + pg), used = k < p.xds;
+        boxes += `<rect x="${ox}" y="${procY + pad}" width="${portW}" height="${portH}" rx="${u * 0.02}" fill="${used ? 'var(--fiber)' : 'none'}" stroke="${used ? 'var(--fiber)' : 'var(--cab-line)'}" stroke-width="${u * 0.012}"/>`
+          + `<text class="gear-pt" x="${ox + portW / 2}" y="${procY + pad + portH * 0.72}" font-size="${fs * 0.8}" text-anchor="middle" fill="${used ? '#111' : 'var(--stage-muted)'}">${xdLetter(k)}</text>`;
+      }
+    }
+    if (isXd){
+      const xx = x + (gr.w - gr.topW) / 2;
+      p.xdList.forEach((xd, k) => {
+        const bx = xx + k * (xdW + gapX), bk = xd.role === 'backup';
+        boxes += box(bx, xdY, xdW, xdH, `XD ${xd.letter}${multi ? ' · #' + (p.i + 1) : ''}${red ? (bk ? ' · backup' : ' · main') : ''}`, bk);
+        for (let q = 1; q <= slots; q++) portBox(bx + pad + (q - 1) * (portW + pg), xdY + pad, `${p.i}|${xd.i}|${q}`);
+        // 10G fiber from processor output k up to this XD (the backup processor into the XD's second input, dashed).
+        procBoxes.forEach((pb, n) => {
+          const ox = pb.x + pad + k * (portW + pg) + portW / 2, ix = bx + xdW / 2 + (nProc > 1 ? (n ? 1 : -1) * u * 0.18 : 0);
+          const my = xdY + xdH + (procY - xdY - xdH) * (n ? 0.62 : 0.38) + (k - (p.xds - 1) / 2) * u * 0.03;
+          fiber += `<path d="M${ox} ${procY} V${my} H${ix} V${xdY + xdH}" fill="none" stroke="var(--fiber)" stroke-width="${u * 0.022}"${pb.backup ? ` stroke-dasharray="${u * 0.06} ${u * 0.04}"` : ''}><title>10G fiber · ${esc(short)}${pb.backup ? ' backup' : ''} output ${xd.letter} → XD ${xd.letter}</title></path>`;
+          boxes += `<rect x="${ix - u * 0.05}" y="${xdY + xdH - u * 0.05}" width="${u * 0.1}" height="${u * 0.1}" fill="var(--fiber)"/>`;
+        });
+      });
+    }
+    x += gr.w + groupGap;
+  }
+
+  // Ports: filled with the run's color, labeled with the run.
+  const byPort = {};
+  for (const c of cables) byPort[`${c.port.proc}|${c.port.xdi}|${c.port.port}`] = c;
+  for (const [key, [px, py]] of Object.entries(portAt)){
+    const c = byPort[key], q = key.split('|')[2];
+    if (c){
+      const col = dataColor(c.r.i);
+      boxes += `<rect x="${px}" y="${py}" width="${portW}" height="${portH}" rx="${u * 0.02}" fill="${col}"${c.b ? ` fill-opacity=".35" stroke="${col}" stroke-width="${u * 0.014}" stroke-dasharray="${u * 0.03} ${u * 0.02}"` : ''}><title>${c.r.label}${c.b ? ' backup return' : ''} · ${portLabel(c.port, R)} · ${c.r.cells.length} cabinets · ${pct(c.r.load)}</title></rect>`
+        + `<text class="gear-pt" x="${px + portW / 2}" y="${py + portH * 0.7}" font-size="${fs * (c.r.label.length > 3 ? 0.62 : 0.75)}" text-anchor="middle" fill="${c.b ? 'var(--stage-ink)' : '#111'}" pointer-events="none">${c.r.label}${c.b ? 'R' : ''}</text>`;
+    } else {
+      boxes += `<rect class="gear-port" x="${px}" y="${py}" width="${portW}" height="${portH}" rx="${u * 0.02}" stroke-width="${u * 0.01}"/>`
+        + `<text x="${px + portW / 2}" y="${py + portH * 0.68}" font-size="${fs * 0.6}" text-anchor="middle" fill="var(--stage-muted)" font-family="var(--f-mono)">${q}</text>`;
+    }
+  }
+
+  // Home runs: up from the port into its own lane, across, and up to the cabinet.
+  const sorted = cables.filter(c => portAt[`${c.port.proc}|${c.port.xdi}|${c.port.port}`])
+    .map(c => ({c, px: portAt[`${c.port.proc}|${c.port.xdi}|${c.port.port}`][0] + portW / 2}))
+    .sort((a, b) => (a.c.to[0] - a.px) - (b.c.to[0] - b.px));
+  let cab = '';
+  sorted.forEach(({c, px}, i) => {
+    const ly = chanTop + (i + 0.5) * lane, [tx, ty] = c.to, col = dataColor(c.r.i);
+    cab += `<path d="M${px} ${xdY + pad} V${ly} H${tx} V${ty}" fill="none" stroke="${col}" stroke-width="${u * 0.018}" stroke-opacity=".7" stroke-linejoin="round"${c.b ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}><title>${c.r.label}${c.b ? ' backup return' : ''} home run · ${portLabel(c.port, R)}</title></path>`;
+  });
+  return {cables: cab + fiber, boxes, minX: x0 - u * 0.3, maxX: x0 + total + u * 0.3, maxY: procY + procH + u * 0.2};
 }
 
 function legendHtml(){
@@ -721,6 +848,7 @@ function legendHtml(){
   if (S.layer !== 'power'){
     h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--accent)" stroke-width="2"/><circle cx="5" cy="6" r="4" fill="var(--accent)"/>')}Data run (dot = data in, arrows = direction)</span>`;
     if (S.dataRed) h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/>')}Backup return line</span>`;
+    if (S.gear) h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--fiber)" stroke-width="2.5"/>')}10G fiber, processor to XD</span><span>${sw('<path d="M2 10 V4 H32" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity=".7"/>')}Cat6 home run, XD port to first cabinet</span>`;
   }
   if (S.layer !== 'data') h += `<span>${sw('<line x1="4" y1="6" x2="30" y2="6" stroke="hsl(28 88% 54%)" stroke-width="5" stroke-linecap="round" opacity=".75"/><rect x="1" y="2" width="8" height="8" fill="hsl(28 88% 54%)"/>')}Power circuit (square = power in)</span>`;
   if (isManual()) h += `<span>${sw('<rect x="2" y="1" width="30" height="10" fill="none" stroke="var(--warn)" stroke-dasharray="3 2"/>')}Not wired yet (${S.drawLayer})</span>`;
@@ -738,7 +866,7 @@ function gearRows(R){
     ['Processors', `${R.primProcs} × ${proc.name}` + (S.procRed ? ` + ${R.primProcs} backup` : '') + ` (${R.totalProcs} total)`],
   ];
   if (R.isXd){
-    rows.push([`${proc.xdName || 'XD'} boxes`, `${R.xdTotal}`]);
+    rows.push([`${proc.xdName || 'XD'} boxes`, `${R.xdTotal}` + (S.dataRed ? ` (${R.xdTotal / 2} main + ${R.xdTotal / 2} backup)` : '')]);
     rows.push(['10G fiber trunks', `${R.xdTotal * (S.procRed ? 2 : 1)}` + (S.procRed ? ' (primary + backup processor to each XD)' : ' (processor to XD)')]);
   }
   rows.push(['1G Cat6 home runs', `${R.portsUsed}` + (S.dataRed ? ` (${R.runs.length} primary + ${R.runs.length} backup)` : '')]);
@@ -783,21 +911,20 @@ function powerHtml(R){
 }
 function chainHtml(R){
   if (!R.procs.length) return '<p class="hint">No data runs yet.</p>';
-  const proc = R.proc, short = esc(proc.short || proc.name);
-  let h = `<p class="hint" style="margin-bottom:10px">${R.isXd ? `Processor (10G fiber) → ${esc(proc.xdName || 'XD')} box → 1G Cat6 runs → LED cabinets` : 'Processor → 1G Cat6 runs → LED cabinets'}${S.procRed ? '. The backup processor feeds the second 10G input on every XD.' : ''}</p><div class="chain">`;
+  const proc = R.proc, short = esc(proc.short || proc.name), xdn = esc(proc.xdName || 'XD');
+  let h = `<p class="hint" style="margin-bottom:10px">${R.isXd ? `Processor (10G fiber) → ${xdn} box → 1G Cat6 runs → LED cabinets. XDs are lettered after the processor output that feeds them${S.dataRed ? '; A is main and B its backup, C main and D its backup' : ''}` : 'Processor → 1G Cat6 runs → LED cabinets'}${S.procRed ? '. The backup processor feeds the second 10G input on every XD.' : '.'}</p><div class="chain">`;
   for (const p of R.procs){
-    h += `<div class="chain-proc"><div class="chain-head"><span class="node">${short} #${p.i + 1} · Primary</span>${S.procRed ? `<span class="node bk">${short} #${p.i + 1}B · Backup</span>` : ''}<span class="link">${pct(p.pixLoad)} pixel load · ${p.ports}/${R.portsPerProc} ports</span></div>`;
-    const byXd = {};
-    for (const r of p.runs){ (byXd[r.port.xd] ||= []).push({r, port: r.port.port, b: false}); if (r.bport) (byXd[r.bport.xd] ||= []).push({r, port: r.bport.port, b: true}); }
-    const xdList = R.isXd ? Array.from({length: p.xds}, (_, k) => p.xdFirst + k) : [0];
+    h += `<div class="chain-proc"><div class="chain-head"><span class="node">${short} #${p.i + 1} · Primary</span>${S.procRed ? `<span class="node bk">${short} #${p.i + 1} · Backup</span>` : ''}<span class="link">${pct(p.pixLoad)} pixel load · ${p.ports}/${R.portsPerProc} ports</span></div><div class="xds">`;
+    const list = R.isXd ? p.xdList : [{i: -1, role: 'main'}];
     const slots = R.isXd ? R.ppx : R.portsPerProc;
-    h += '<div class="xds">';
-    for (const x of xdList){
-      const used = byXd[x] || [];
-      h += `<div class="xd"><h4><span>${R.isXd ? `${esc(proc.xdName || 'XD')} ${x}` : 'Processor ports'}</span><span class="link">${R.isXd ? `10G fiber ← ${short} #${p.i + 1}${S.procRed ? ' + backup' : ''}` : ''}</span></h4><div class="ports">`;
+    for (const xd of list){
+      const used = [];
+      for (const r of p.runs){ if (r.port.xdi === xd.i) used.push({r, port: r.port.port, b: false}); if (r.bport && r.bport.xdi === xd.i) used.push({r, port: r.bport.port, b: true}); }
+      const title = R.isXd ? `${xdn} ${xd.letter}${S.dataRed ? (xd.role === 'backup' ? ` · backup for ${xdLetter(xd.i - 1)}` : ' · main') : ''}` : 'Processor ports';
+      h += `<div class="xd"${xd.role === 'backup' ? ' style="border-style:dashed"' : ''}><h4><span>${title}</span><span class="link">${R.isXd ? `10G ← output ${xd.letter}${S.procRed ? ' + backup' : ''}` : ''}</span></h4><div class="ports">`;
       for (let q = 1; q <= slots; q++){
         const u = used.find(e => e.port === q);
-        h += u ? `<div class="port${u.b ? ' bkp' : ''}" style="border-color:${dataColor(u.r.i)}" title="${u.r.label}${u.b ? ' backup' : ''} · ${u.r.cells.length} cabinets">${u.r.label}${u.b ? 'R' : ''}<small>${q} · ${pct(u.r.load)}</small></div>` : `<div class="port empty">—<small>${q}</small></div>`;
+        h += u ? `<div class="port${u.b ? ' bkp' : ''}" style="border-color:${dataColor(u.r.i)}" title="${u.r.label}${u.b ? ' backup return' : ''} · ${u.r.cells.length} cabinets">${u.r.label}${u.b ? 'R' : ''}<small>${q} · ${pct(u.r.load)}</small></div>` : `<div class="port empty">—<small>${q}</small></div>`;
       }
       h += '</div></div>';
     }
@@ -890,7 +1017,7 @@ function render(){
   ].join('');
   $('#warns').innerHTML = R.warns.map(x => `<div class="warn${x.err ? ' err' : ''}">${esc(x.t)}</div>`).join('');
 
-  $('#stage').innerHTML = wallSvg(R, {layer: S.layer, labels: S.labels, view: S.view, unwired: man ? S.drawLayer : ''}) + (toastMsg ? `<div id="toast">${esc(toastMsg)}</div>` : '');
+  $('#stage').innerHTML = wallSvg(R, {layer: S.layer, labels: S.labels, view: S.view, gear: S.gear, unwired: man ? S.drawLayer : ''}) + (toastMsg ? `<div id="toast">${esc(toastMsg)}</div>` : '');
   applyZoom();
   $('#legend').innerHTML = legendHtml();
   $('#tabBody').innerHTML = S.tab === 'chain' ? chainHtml(R) : S.tab === 'data' ? dataHtml(R) : S.tab === 'power' ? powerHtml(R) : gearHtml(R);
@@ -982,7 +1109,7 @@ $('#fileIn').addEventListener('change', async e => {
 function buildPrint(){
   const r = calc(), date = new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'});
   const head = t => `<div class="pv-head"><h1>${esc(S.name)} — ${t}</h1><span>${esc(r.P.name)} · ${r.wall.cols} × ${r.wall.rows} · ${fmt(r.wall.resW)} × ${fmt(r.wall.resH)} px · ${date} · LED Wiring Planner v${APP_VERSION}</span></div>`;
-  const view = {labels: true, view: S.view};
+  const view = {labels: true, view: S.view, gear: S.gear};
   $('#printView').innerHTML =
     `<section class="pv-page">${head('Data wiring')}<div class="pv-svg">${wallSvg(r, {...view, layer: 'data'})}</div>${dataHtml(r)}</section>` +
     `<section class="pv-page">${head('Power wiring')}<div class="pv-svg">${wallSvg(r, {...view, layer: 'power'})}</div>${powerHtml(r)}</section>` +
