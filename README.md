@@ -48,13 +48,13 @@ Wiring starts **hand drawn**: the wall starts unwired and you draw each data run
 - Cabinet numbers are column, row, counted from the front-left.
 
 ### Processors and XDs on the diagram
-- With **Processors & XDs** on (above the diagram), the gear is drawn around the wall: the SX40s, **10G fiber** (yellow) to their XDs, and a **Cat6 home run** from every XD port to the cabinet it plugs into.
-- Each XD goes on the **top or bottom edge** of the wall, whichever is nearer the cabinets it feeds, and slides along that edge to sit by the part of the wall it serves. Each SX40 goes on the edge with most of its XDs; fiber to an XD on the other edge runs around the outside of the wall.
+- With **Processors & XDs** on (above the diagram), the gear is drawn around the wall: the SX40s, their XDs, and a **Cat6 home run** from every XD port to the cabinet it plugs into. Fiber between the SX40 and its XDs isn't drawn; the shared color and the XD letters (matching the SX40's lettered outputs) show which XDs each SX40 feeds.
+- Each XD goes on the **top or bottom edge** of the wall, whichever is nearer the cabinets it feeds, and slides along that edge to sit by the part of the wall it serves. Each SX40 goes on the edge with most of its XDs.
 - Cables come in from the **nearest edge**: straight in from the XD's edge, or, for a cabinet on the left or right edge, up the outside of the wall and in from the side. Cables run in their own lanes along the edges so cables leaving one side of an XD don't cross. Ports are given out top half first, then bottom half, each from the rear left, so an XD tends to serve one area and one edge.
-- **One color per XD box**: its outline, its ports, its cables and the runs it feeds on the wall all share that color.
+- **One color per processor**: SX40 #1 is green, and its XDs, their cables and the runs they feed on the wall are green too. SX40 #2 gets the next color (blue), and so on. Within a processor, tell XDs apart by their letter. The legend lists each processor with its XDs.
 - XDs are lettered **A, B, C, D** after the SX40 output that feeds them, as Brompton does. With **data redundancy**, A is main and B its backup, C main and D its backup. The backup cable (dashed) plugs into the **last cabinet** of the run (marked with a ring) and comes from the **same port number on the backup XD**.
 - **Cable names** are processor number, XD letter and port number: `1A-3` is SX40 #1, XD A, port 3, and its backup is `1B-3`. The label sits on the cabinet each cable plugs into, with the port load (`1A-3 · 98%`). The port schedule and signal chain use the same names.
-- With **Full redundancy**, the backup SX40 is drawn beside the main one, with dashed fiber into each XD's second input.
+- With **Full redundancy**, the backup SX40 is drawn beside the main one with a dashed outline, in the same color.
 - The gear also prints on the data wiring page of the PDF.
 
 ### Zoom

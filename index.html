@@ -386,7 +386,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 
 <script>
 'use strict';
-const APP_VERSION = '1.07';
+const APP_VERSION = '1.08';
 
 /* =====================================================================
    1. LIBRARY DATA
@@ -675,10 +675,11 @@ const xdLetter = i => i < 26 ? String.fromCharCode(65 + i) : 'X' + (i + 1);
 const portLabel = (p, R) => !p ? '—' : R.isXd ? `${p.proc + 1}${p.letter}-${p.port}` : `${p.proc + 1}-P${p.port}`;
 const voltName = v => v === '120' ? '120 V' : v === '208-1' ? '208 V 1-phase' : '208 V 3-phase';
 // Distinct colors per run / circuit, spaced by the golden angle so neighbors never look alike.
-// One color per XD box (per processor for direct ports). Yellow is left for fiber.
-const XD_COLORS = ['#38C6F4', '#F2668B', '#9BD35A', '#FF9F43', '#B68CFF', '#3FD9C2', '#FF6B5A', '#7FA8FF', '#E58BE8', '#5EE07F'];
-const xdColor = gi => XD_COLORS[gi] || `hsl(${(200 + gi * 137.508) % 360} 75% 62%)`;
-const runColor = r => xdColor(r.port ? r.port.gi : 0);
+// One color per processor: the processor, all its XDs, their cables and the runs they feed share it.
+// Red and yellow are left for power.
+const PROC_COLORS = ['#4ADE80', '#38C6F4', '#FF9F43', '#B68CFF', '#F472B6', '#2DD4BF', '#7FA8FF', '#E2E8F0'];
+const procColor = i => PROC_COLORS[i] || `hsl(${(140 + i * 137.508) % 360} 70% 62%)`;
+const runColor = r => procColor(r.port ? r.port.proc : 0);
 const POWER_TONES = {red: '#E5484D', yellow: '#F5D90A'};
 const powColor = p => p.color || POWER_TONES.red;
 
@@ -763,13 +764,13 @@ function wallSvg(R, o){
       s += `<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="${u * 0.065}" fill="${col}" stroke="#000" stroke-width="${u * 0.012}"><title>${r.label} data in · ${portLabel(r.port, R)}</title></circle>`;
       // Redundancy: the backup cable plugs into the last cabinet of the run (ring in the backup XD's color).
       if (r.bport){
-        const [lx, ly] = pts[pts.length - 1], bc = xdColor(r.bport.gi);
+        const [lx, ly] = pts[pts.length - 1], bc = procColor(r.bport.proc);
         s += `<circle cx="${lx}" cy="${ly}" r="${u * 0.075}" fill="#000" stroke="${bc}" stroke-width="${u * 0.025}"><title>${r.label} backup in · ${portLabel(r.bport, R)}</title></circle>`;
       }
       if (o.labels){
         const c0 = r.cells[0], cl = r.cells[r.cells.length - 1];
         labels += pill(X(c0.c) + u * 0.05, c0.r * ch + u * 0.05, `${portLabel(r.port, R)} · ${pct(r.load)}`, col);
-        if (r.bport) labels += pill(X(cl.c) + cw - u * 0.05, cl.r * ch + u * 0.05 + (cl === c0 ? fs * 1.6 : 0), portLabel(r.bport, R), xdColor(r.bport.gi), 'end', true);
+        if (r.bport) labels += pill(X(cl.c) + cw - u * 0.05, cl.r * ch + u * 0.05 + (cl === c0 ? fs * 1.6 : 0), portLabel(r.bport, R), procColor(r.bport.proc), 'end', true);
       }
     }
   }
@@ -783,7 +784,8 @@ function wallSvg(R, o){
      near the XD's edge, or up the outside of the wall and in from the left or right when its cabinet is on a side.
      Only a cabinet deep inside the wall gets a cable through other cabinets.
    - Cables run in lanes (along the top and bottom channels and up the sides), packed so cables leaving one
-     side of an XD don't cross each other. 10G fiber to an XD on the far edge goes around the outside of the wall. */
+     side of an XD don't cross each other.
+   - Fiber isn't drawn: each processor and its XDs share a color, and the XD letters match the processor's outputs. */
 function gearSvg(R, g){
   const {W, H, u, fs, cols, rows} = g, red = S.dataRed, isXd = R.isXd;
   const short = R.proc.short || R.proc.name;
@@ -922,7 +924,7 @@ function gearSvg(R, g){
       innerY: inner, outerY: top ? by : by + h};
   };
 
-  let boxes = '', fiber = '', cab = '';
+  let boxes = '', cab = '';
   const frame = (bx, pl, w, h, title, dashed, col) =>
     `<rect class="gear-box" x="${bx}" y="${pl.by}" width="${w}" height="${h}" rx="${u * 0.04}" stroke-width="${u * (col ? 0.022 : 0.014)}"${col ? ` style="stroke:${col}"` : ''}${dashed ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}/>`
     + `<text class="gear-t" x="${bx + pad}" y="${pl.titleY}" font-size="${fs * 0.95}"${col ? ` style="fill:${col}"` : ''}>${esc(title)}</text>`;
@@ -931,7 +933,7 @@ function gearSvg(R, g){
   const used = {};
   for (const c of cables) used[`${c.port.proc}|${c.port.xdi}|${c.port.port}`] = c;
   for (const b of pboxes){
-    const col = xdColor(b.gi), bk = b.xd && b.xd.role === 'backup';
+    const col = procColor(b.p.i), bk = b.xd && b.xd.role === 'backup';
     const pl = place(b.side, isXd ? geo[b.side].xdInner : geo[b.side].procInner, xdH);
     b.pl = pl;
     if (isXd) boxes += frame(b.x, pl, b.w, xdH, `XD ${b.xd.letter} · #${b.p.i + 1}${red ? (bk ? ' · backup' : ' · main') : ''}`, bk, col);
@@ -953,51 +955,31 @@ function gearSvg(R, g){
     if (c.entry === 'same') pts.push([c.tx, c.y1], [c.tx, c.to[1]]);
     else if (c.entry === 'opp') pts.push([c.sx, c.y1], [c.sx, c.y2], [c.tx, c.y2], [c.tx, c.to[1]]);
     else pts.push([c.sx, c.y1], [c.sx, c.to[1]], [c.to[0], c.to[1]]);
-    cab += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${xdColor(c.port.gi)}" stroke-width="${u * 0.02}" stroke-opacity=".85" stroke-linejoin="round"${c.b ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}><title>${portLabel(c.port, R)} · ${c.r.label}${c.b ? ' backup' : ''}</title></polyline>`;
+    cab += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${procColor(c.port.proc)}" stroke-width="${u * 0.02}" stroke-opacity=".85" stroke-linejoin="round"${c.b ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}><title>${portLabel(c.port, R)} · ${c.r.label}${c.b ? ' backup' : ''}</title></polyline>`;
   }
 
-  // Processors with their lettered 10G outputs, and fiber to each XD of the same letter
-  // (the backup processor into the XD's second input, dashed; around the outside of the wall for an XD on the far edge).
+  // Processors in their own color, with their lettered 10G outputs (filled when an XD of that letter is in use).
+  // No fiber is drawn: the matching color and letters show which XDs each processor feeds.
   const sideXs = cables.filter(c => c.sx != null).map(c => c.sx);
-  const outerL = Math.min(-u * 0.45, ...sideXs) - u * 0.3, outerR = Math.max(W + u * 0.15, ...sideXs) + u * 0.3;
-  let fiberN = 0;
   const allX = [], allY = [];
   for (const pr of prow){
-    const p = pr.p, pl = place(pr.side, geo[pr.side].procInner, procH);
+    const p = pr.p, pl = place(pr.side, geo[pr.side].procInner, procH), col = procColor(p.i);
     allY.push(pl.by, pl.by + procH);
     for (let b = 0; b < nProc; b++){
       const bx = pr.x + b * (procW + gapX);
       allX.push(bx, bx + procW);
-      boxes += frame(bx, pl, procW, procH, `${short} #${p.i + 1}${b ? ' · backup' : ''}`, b === 1);
+      boxes += frame(bx, pl, procW, procH, `${short} #${p.i + 1}${b ? ' · backup' : ''}`, b === 1, col);
       if (!isXd) continue;
       for (let k = 0; k < outs; k++){
         const ox = bx + pad + k * (portW + pg), on = k < p.xds;
-        boxes += `<rect x="${ox}" y="${pl.portY}" width="${portW}" height="${portH}" rx="${u * 0.02}" fill="${on ? 'var(--fiber)' : 'none'}" stroke="${on ? 'var(--fiber)' : 'var(--cab-line)'}" stroke-width="${u * 0.012}"/>`
-          + `<text class="gear-pt" x="${ox + portW / 2}" y="${pl.portY + portH * 0.72}" font-size="${fs * 0.8}" text-anchor="middle" fill="${on ? '#111' : 'var(--stage-muted)'}">${xdLetter(k)}</text>`;
+        boxes += `<rect x="${ox}" y="${pl.portY}" width="${portW}" height="${portH}" rx="${u * 0.02}" fill="${on ? col : 'none'}" stroke="${on ? col : 'var(--cab-line)'}" stroke-width="${u * 0.012}"><title>Output ${xdLetter(k)}${on ? ' → XD ' + xdLetter(k) : ' (not used)'}</title></rect>`
+          + `<text class="gear-pt" x="${ox + portW / 2}" y="${pl.portY + portH * 0.72}" font-size="${fs * 0.8}" text-anchor="middle" fill="${on ? '#111' : 'var(--stage-muted)'}" pointer-events="none">${xdLetter(k)}</text>`;
       }
-      p.xdList.forEach((xd, k) => {
-        const xb = boxByKey[`${p.i}|${xd.i}`];
-        if (!xb) return;
-        const ox = bx + pad + k * (portW + pg) + portW / 2, ix = xb.x + xb.w / 2 + (nProc > 1 ? (b ? 1 : -1) * u * 0.18 : 0);
-        const g0 = geo[pr.side], dash = b ? ` stroke-dasharray="${u * 0.06} ${u * 0.04}"` : '';
-        let pts;
-        if (xb.side === pr.side){
-          const my = (pl.innerY + xb.pl.outerY) / 2 + g0.d * ((b ? 0.15 : -0.15) * u + (k - (p.xds - 1) / 2) * u * 0.035);
-          pts = [[ox, pl.innerY], [ox, my], [ix, my], [ix, xb.pl.outerY]];
-        } else {
-          const n = fiberN++, fx = ix < W / 2 ? outerL - n * u * 0.06 : outerR + n * u * 0.06;
-          const y1 = pl.innerY - g0.d * (u * 0.3 + n * u * 0.04), g1 = geo[xb.side], y2 = xb.pl.outerY + g1.d * (u * 0.3 + n * u * 0.04);
-          pts = [[ox, pl.innerY], [ox, y1], [fx, y1], [fx, y2], [ix, y2], [ix, xb.pl.outerY]];
-          allX.push(fx); allY.push(y2);
-        }
-        fiber += `<polyline points="${pts.map(q => q.join(',')).join(' ')}" fill="none" stroke="var(--fiber)" stroke-width="${u * 0.022}" stroke-linejoin="round"${dash}><title>10G fiber · ${esc(short)} #${p.i + 1}${b ? ' backup' : ''} output ${xd.letter} → XD ${xd.letter}</title></polyline>`;
-        boxes += `<rect x="${ix - u * 0.05}" y="${xb.pl.outerY - u * 0.05}" width="${u * 0.1}" height="${u * 0.1}" fill="var(--fiber)"/>`;
-      });
     }
   }
   for (const b of pboxes){ allX.push(b.x, b.x + b.w); allY.push(b.pl.by, b.pl.by + xdH); }
   allX.push(...sideXs);
-  return {cables: cab + fiber, boxes, minX: Math.min(...allX) - u * 0.3, maxX: Math.max(...allX) + u * 0.3,
+  return {cables: cab, boxes, minX: Math.min(...allX) - u * 0.3, maxX: Math.max(...allX) + u * 0.3,
     minY: Math.min(0, ...allY) - u * 0.2, maxY: Math.max(H, ...allY) + u * 0.2};
 }
 
@@ -1005,14 +987,13 @@ function legendHtml(){
   const sw = (svg) => `<svg width="34" height="12" viewBox="0 0 34 12">${svg}</svg>`;
   let h = '';
   if (S.layer !== 'power'){
-    h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--accent)" stroke-width="2"/><circle cx="5" cy="6" r="4" fill="var(--accent)"/>')}Data run (dot = data in, arrows = direction), colored by XD</span>`;
+    h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--accent)" stroke-width="2"/><circle cx="5" cy="6" r="4" fill="var(--accent)"/>')}Data run (dot = data in, arrows = direction), colored by processor</span>`;
     if (S.dataRed) h += `<span>${sw('<line x1="2" y1="6" x2="24" y2="6" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/><circle cx="28" cy="6" r="4" fill="none" stroke="var(--accent)" stroke-width="2"/>')}Backup cable into the last cabinet</span>`;
-    if (S.gear) h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--fiber)" stroke-width="2.5"/>')}10G fiber, processor to XD</span>`;
     if (R && R.runs.length){
       const seen = new Set();
-      for (const r of R.runs) for (const pt of [r.port, r.bport]) if (pt && !seen.has(pt.gi)){
-        seen.add(pt.gi);
-        h += `<span><i class="sw" style="background:${xdColor(pt.gi)};margin:0"></i>${R.isXd ? `XD ${pt.letter} · #${pt.proc + 1}` : `${esc(R.proc.short || R.proc.name)} #${pt.proc + 1}`}</span>`;
+      for (const p of R.procs) if (!seen.has(p.i)){
+        seen.add(p.i);
+        h += `<span><i class="sw" style="background:${procColor(p.i)};margin:0"></i>${esc(R.proc.short || R.proc.name)} #${p.i + 1}${R.isXd ? ` + XD ${p.xdList.map(x => x.letter).join(', ')}` : ''}</span>`;
       }
     }
   }
@@ -1090,7 +1071,7 @@ function chainHtml(R){
       h += `<div class="xd"${xd.role === 'backup' ? ' style="border-style:dashed"' : ''}><h4><span>${title}</span><span class="link">${R.isXd ? `10G ← output ${xd.letter}${S.procRed ? ' + backup' : ''}` : ''}</span></h4><div class="ports">`;
       for (let q = 1; q <= slots; q++){
         const u = used.find(e => e.port === q);
-        h += u ? `<div class="port${u.b ? ' bkp' : ''}" style="border-color:${xdColor(R.isXd ? xd.gi : p.i)}" title="${u.r.label}${u.b ? ' backup return' : ''} · ${u.r.cells.length} cabinets">${u.r.label}${u.b ? 'R' : ''}<small>${q} · ${pct(u.r.load)}</small></div>` : `<div class="port empty">—<small>${q}</small></div>`;
+        h += u ? `<div class="port${u.b ? ' bkp' : ''}" style="border-color:${procColor(p.i)}" title="${u.r.label}${u.b ? ' backup return' : ''} · ${u.r.cells.length} cabinets">${u.r.label}${u.b ? 'R' : ''}<small>${q} · ${pct(u.r.load)}</small></div>` : `<div class="port empty">—<small>${q}</small></div>`;
       }
       h += '</div></div>';
     }
