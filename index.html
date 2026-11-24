@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LED Wiring Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* Look and feel copied from PixelPlanner v4 so the two tools sit together as one suite:
+   same color tokens, fonts, panels, segmented buttons, switches and circled "i" tips. */
+:root{
+  --bg:#ECEFF3; --panel:#FFFFFF; --ink:#141920; --muted:#5A6473; --line:#D3D9E1; --field:#F6F8FA;
+  --accent:#0A6C97; --accent-ink:#FFFFFF; --accent-soft:#DCEEF6; --danger:#B3261E; --warn:#B45309;
+  --stage:#161A20; --stage-grid:#232932; --stage-ink:#EEF1F5; --stage-muted:#8E98A6; --cab:#1F252D; --cab-line:#3A4350;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --r:6px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1115; --panel:#161A20; --ink:#E5E9EE; --muted:#8C96A4; --line:#29303A; --field:#1C2128;
+  --accent:#4DB8E4; --accent-ink:#06222F; --accent-soft:#163242; --danger:#F2867E; --warn:#F5B454;
+  --stage:#0A0C0F; --stage-grid:#181D24; --cab:#161B21; --cab-line:#2E3640; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1115; --panel:#161A20; --ink:#E5E9EE; --muted:#8C96A4; --line:#29303A; --field:#1C2128;
+  --accent:#4DB8E4; --accent-ink:#06222F; --accent-soft:#163242; --danger:#F2867E; --warn:#F5B454;
+  --stage:#0A0C0F; --stage-grid:#181D24; --cab:#161B21; --cab-line:#2E3640; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:40px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:16px 14px;max-width:1600px;margin:0 auto}
+.brand{display:flex;align-items:baseline;gap:14px;flex:1 1 320px;min-width:0;flex-wrap:wrap}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.appver{letter-spacing:.06em;opacity:.75;margin-left:4px;text-transform:none}
+#pname{font-family:var(--f-display);font-weight:700;font-size:24px;line-height:1.1;border:0;border-bottom:1px dashed transparent;background:transparent;padding:2px 0;flex:1;min-width:160px}
+#pname:hover,#pname:focus{border-bottom-color:var(--line);outline:none}
+.hdr-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel);flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 11px;cursor:pointer;font-size:13px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg.full{display:flex;flex-wrap:nowrap}.seg.full button{flex:1;white-space:nowrap;padding-inline:6px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--danger)}
+.btn.sm{padding:4px 9px;font-size:12px}
+
+main.work{display:grid;grid-template-columns:minmax(0,390px) minmax(0,1fr);gap:16px;max-width:1600px;margin:0 auto;align-items:start}
+@media (max-width:900px){main.work{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+/* Wide, tall windows: a full-window workspace. The settings sidebar and the main column scroll on their own. */
+@media (min-width:1100px) and (min-height:620px){
+  html,body{height:100%}
+  body{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+  header.top{max-width:none;width:100%;flex:none;padding-block:10px}
+  main.work{flex:1;min-height:0;max-width:none;width:100%;grid-template-rows:minmax(0,1fr);align-items:stretch;padding-bottom:14px}
+  .col{overflow-y:auto;overscroll-behavior:contain;min-height:0;padding-right:4px;scrollbar-gutter:stable}
+  .col > *{flex:none}
+}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.panel h2{font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;margin:0;display:flex;align-items:center}
+.panel h3{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.stack{display:grid;gap:10px}
+.hint{color:var(--muted);font-size:13px;margin:0}
+.info{display:inline-grid;place-items:center;flex:none;width:17px;height:17px;padding:0;margin:0 0 0 6px;border:1.5px solid currentColor;border-radius:50%;background:none;
+  color:var(--muted);font:italic 700 11px/1 Georgia,"Times New Roman",serif;letter-spacing:0;text-transform:none;cursor:help;vertical-align:middle;opacity:.85}
+.info:hover,.info:focus-visible,.info.on{color:var(--accent);opacity:1}
+#tipPop{position:fixed;z-index:200;max-width:min(320px,calc(100vw - 24px));background:var(--ink);color:var(--bg);font:500 13px/1.45 var(--f-body);
+  padding:8px 11px;border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:none}
+
+label.f,div.f{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:0}
+.f input,.f select{border:1px solid var(--line);background:var(--field);border-radius:5px;padding:6px 8px;font-size:14px;letter-spacing:0;text-transform:none;color:var(--ink);width:100%;min-width:0}
+.f input[inputmode]{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.f input:focus,.f select:focus{border-color:var(--accent);outline:none}
+.row{display:grid;gap:8px}
+.r2{grid-template-columns:1fr 1fr}
+.r3{grid-template-columns:1fr 1fr 1fr}
+.x-sep{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:6px}
+.x-sep>span{padding-bottom:7px;color:var(--muted)}
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:14px}
+.switch input{width:38px;height:22px;appearance:none;-webkit-appearance:none;background:var(--line);border-radius:11px;position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--panel);transition:left .15s}
+.switch input:checked{background:var(--accent)}
+.switch input:checked::after{left:19px}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink)}
+
+/* Read-only results */
+.readout{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;background:var(--field);border-radius:6px;padding:10px 12px}
+.readout dt{color:var(--muted)}
+.readout dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.util{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px;font-size:13px}
+.util b{font-family:var(--f-mono);font-weight:600}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.bar i.hot{background:var(--warn)}
+.warns{display:grid;gap:6px}
+.warn{border:1px solid var(--warn);color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);border-radius:6px;padding:7px 10px;font-size:13px}
+.warn.err{border-color:var(--danger);color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent)}
+.disc{font-size:12px;color:var(--muted);margin:0}
+
+/* Summary tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.tile .k{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--f-mono);font-weight:600;font-size:22px;line-height:1.2}
+.tile .s{font-size:12px;color:var(--muted)}
+
+/* The dark stage that holds the wiring diagram */
+.stage-panel{padding:0;overflow:hidden;display:flex;flex-direction:column}
+.stage-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.stage{background:var(--stage);min-height:380px;height:58vh;padding:8px;display:flex}
+.stage svg{width:100%;height:100%;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend svg{flex:none}
+
+/* Diagram drawing classes (also used on the print page) */
+.w-bg{fill:var(--stage)}
+.cab{fill:var(--cab);stroke:var(--cab-line)}
+.cabnum{fill:var(--stage-muted);font-family:var(--f-mono)}
+.axis{fill:var(--stage-muted);font-family:var(--f-mono)}
+.viewtag{fill:var(--stage-muted);font-family:var(--f-display);font-weight:600;letter-spacing:.12em}
+.pill-t{font-family:var(--f-mono);font-weight:700;fill:#0B0E12}
+
+/* Tabs under the stage */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:-4px 0 12px;flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:8px 12px;font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tblwrap{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t th{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td.n,table.t th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+table.t tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+/* Signal chain */
+.chain{display:grid;gap:14px}
+.chain-proc{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:10px}
+.chain-head{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-weight:600}
+.node{border:1px solid var(--accent);background:var(--accent-soft);border-radius:6px;padding:4px 10px;font-weight:600;font-size:13px}
+.node.bk{border-style:dashed}
+.link{font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.xds{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.xd{border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--field)}
+.xd h4{margin:0 0 6px;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.ports{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.port{border:1px solid var(--line);border-radius:4px;font:600 11px var(--f-mono);text-align:center;padding:3px 0;background:var(--panel);min-width:0;overflow:hidden}
+.port small{display:block;font-weight:400;color:var(--muted);font-size:10px}
+.port.empty{opacity:.45}
+.port.bkp{border-style:dashed}
+
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+.dlg{padding:18px;display:grid;gap:12px}
+.dlg h2{font-family:var(--f-display);font-size:20px;margin:0}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.lib-list{display:grid;gap:6px}
+.lib-item{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:13px}
+
+#printView{display:none}
+@media print{
+  /* The print page is light whatever the screen theme, so it reads on paper and in PDF viewers. */
+  :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+    --bg:#fff; --panel:#fff; --ink:#000; --muted:#444; --line:#bbb; --field:#f3f3f3;
+    --stage:#ffffff; --stage-ink:#000; --stage-muted:#555; --cab:#f4f5f7; --cab-line:#9aa0a8; color-scheme:light}
+  @page{size:landscape;margin:10mm}
+  body{padding:0;height:auto!important;overflow:visible!important;display:block!important;font-size:11px;background:#fff}
+  header.top,main.work,dialog,#tipPop{display:none!important}
+  #printView{display:block}
+  .pv-page{break-after:page;page-break-after:always}
+  .pv-page:last-child{break-after:auto;page-break-after:auto}
+  .pv-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:8px}
+  .pv-head h1{font-family:var(--f-display);font-size:20px;margin:0}
+  .pv-head span{font-size:11px;color:#444}
+  .pv-svg{height:110mm;border:1px solid #bbb;margin-bottom:8px}
+  .pv-svg svg{width:100%;height:100%}
+  .pv-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  table.t{font-size:10px}
+  table.t td,table.t th{padding:3px 6px}
+  .chain-proc,.xd,.tile{break-inside:avoid}
+  h2.pv{font-family:var(--f-display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:8px 0 4px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="eyebrow">LED Wiring Planner<span class="appver" id="appVer"></span></span>
+    <input id="pname" data-k="name" aria-label="Project name" spellcheck="false">
+  </div>
+  <div class="hdr-tools">
+    <div class="seg" id="themeSeg" role="group" aria-label="Theme">
+      <button type="button" data-theme-v="auto">Auto</button><button type="button" data-theme-v="light">Light</button><button type="button" data-theme-v="dark">Dark</button>
+    </div>
+    <button class="btn" id="btnOpen" type="button">Open .json</button>
+    <input type="file" id="fileIn" accept=".json,application/json" hidden>
+    <button class="btn" id="btnSave" type="button">Save .json</button>
+    <button class="btn primary" id="btnPrint" type="button" title="Opens your browser's print window. Choose Save as PDF to make a PDF.">Print / Export PDF</button>
+  </div>
+</header>
+
+<main class="work">
+  <!-- ===== Settings sidebar ===== -->
+  <div class="col side">
+
+    <section class="panel">
+      <div class="panel-head"><h2>LED panel<button type="button" class="info" data-tip="The cabinet the wall is built from. ROE Diamond DM2.6 and ROE Graphite GP2.6 are built in. Choose Custom panel to type your own, then Add to library to keep it for next time." aria-label="About the LED panel">i</button></h2>
+        <button type="button" class="btn sm" id="btnLib">Library…</button></div>
+      <div class="stack">
+        <label class="f">Panel<select id="panelSel"></select></label>
+        <div id="customPanel" class="stack" hidden>
+          <label class="f">Panel name<input data-k="custom.name"></label>
+          <div class="row r2"><label class="f">Width (mm)<input inputmode="decimal" data-k="custom.w" data-num></label><label class="f">Height (mm)<input inputmode="decimal" data-k="custom.h" data-num></label></div>
+          <div class="row r2"><label class="f">Pixels wide<input inputmode="numeric" data-k="custom.px" data-num></label><label class="f">Pixels high<input inputmode="numeric" data-k="custom.py" data-num></label></div>
+          <div class="row r3"><label class="f">Max W<input inputmode="decimal" data-k="custom.maxW" data-num></label><label class="f">Typical W<input inputmode="decimal" data-k="custom.typW" data-num></label><label class="f">Weight kg<input inputmode="decimal" data-k="custom.kg" data-num></label></div>
+          <div class="row r2"><label class="chk"><input type="checkbox" data-k="custom.v120"> Works on 120 V</label><label class="chk"><input type="checkbox" data-k="custom.v208"> Works on 208 V</label></div>
+          <button type="button" class="btn" id="btnAddCustom">Add panel to library</button>
+        </div>
+        <dl class="readout" id="panelSpec"></dl>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Wall size<button type="button" class="info" data-tip="Set the wall by cabinet count (columns × rows), or type the size you need and the planner picks the closest whole number of cabinets." aria-label="About wall size">i</button></h2>
+        <div class="seg" role="group" aria-label="Size by"><button type="button" data-k="sizeMode" data-v="cab">Cabinets</button><button type="button" data-k="sizeMode" data-v="size">Target size</button></div></div>
+      <div class="stack">
+        <div class="x-sep" id="byCab"><label class="f">Columns<input inputmode="numeric" data-k="cols" data-num></label><span>×</span><label class="f">Rows<input inputmode="numeric" data-k="rows" data-num></label></div>
+        <div id="bySize" class="stack" hidden>
+          <div class="x-sep"><label class="f">Width<input inputmode="decimal" id="tw"></label><span>×</span><label class="f">Height<input inputmode="decimal" id="th"></label></div>
+          <div class="seg" role="group" aria-label="Units"><button type="button" data-k="unit" data-v="ft">Feet</button><button type="button" data-k="unit" data-v="m">Meters</button></div>
+        </div>
+        <dl class="readout" id="wallSpec"></dl>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Processing<button type="button" class="info" data-tip="Brompton Tessera SX40: four 10G fiber outputs, each feeding one Tessera XD, which splits it into ten 1G Cat6 ports (40 ports per SX40). Port capacity is the published 525,000 px at 8-bit 60 Hz; it scales with bit depth and frame rate." aria-label="About processing">i</button></h2></div>
+      <div class="stack">
+        <label class="f">Processor<select id="procSel" data-k="procId"></select></label>
+        <div id="customProc" class="stack" hidden>
+          <label class="f">Name<input data-k="customProc.name"></label>
+          <div class="row r2"><label class="f">Pixel limit<input inputmode="numeric" data-k="customProc.pixelCap" data-num></label><label class="f">Px per 1G port (8-bit 60 Hz)<input inputmode="numeric" data-k="customProc.portPx" data-num></label></div>
+          <div class="seg full" role="group" aria-label="Outputs"><button type="button" data-k="customProc.mode" data-v="xd">Via XD boxes</button><button type="button" data-k="customProc.mode" data-v="direct">Direct 1G ports</button></div>
+          <div class="row r2" id="cpXd"><label class="f">10G trunks<input inputmode="numeric" data-k="customProc.trunks" data-num></label><label class="f">1G ports per XD<input inputmode="numeric" data-k="customProc.portsPerXd" data-num></label></div>
+          <label class="f" id="cpDirect">1G ports<input inputmode="numeric" data-k="customProc.ports" data-num></label>
+        </div>
+        <div class="row" style="grid-template-columns:1.4fr 1fr">
+          <div class="f">Bit depth<div class="seg full" role="group" aria-label="Bit depth"><button type="button" data-k="bits" data-v="8">8-bit</button><button type="button" data-k="bits" data-v="10">10-bit</button><button type="button" data-k="bits" data-v="12">12-bit</button></div></div>
+          <label class="f">Frame rate (Hz)<select data-k="fps" data-num>
+            <option>23.98</option><option>24</option><option>25</option><option>29.97</option><option>30</option><option>48</option><option>50</option><option>59.94</option><option>60</option><option>100</option><option>119.88</option><option>120</option></select></label>
+        </div>
+        <div class="f">Processors<div class="seg full" role="group" aria-label="Processor redundancy"><button type="button" data-k="procRed" data-v="0">Primary only</button><button type="button" data-k="procRed" data-v="1">Full redundancy (backup)</button></div></div>
+        <div id="utilBox" class="stack"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Data wiring<button type="button" class="info" data-tip="How cabinets are daisy-chained on each 1G port, seen from behind the wall. Snakes zig-zag continuously. Top-down and bottom-up start every run at the top or bottom edge. By default runs keep to whole rows or columns; Fill each port packs as many cabinets as fit." aria-label="About data wiring">i</button></h2></div>
+      <div class="stack">
+        <div class="row r2">
+          <label class="f">Pattern<select data-k="dataPat"><option value="hsnake">Horizontal snake</option><option value="vsnake">Vertical snake</option><option value="topdown">Top-down</option><option value="bottomup">Bottom-up</option></select></label>
+          <label class="f">Start side (rear)<select data-k="dataStart"><option value="left">Rear left</option><option value="right">Rear right</option></select></label>
+        </div>
+        <label class="switch"><input type="checkbox" data-k="dataFill"> Fill each port (ignore row/column ends)</label>
+        <label class="switch"><input type="checkbox" data-k="dataRed"> Data redundancy (backup return lines)</label>
+        <label class="f">Max cabinets per run (optional)<input inputmode="numeric" data-k="maxRun" data-num placeholder="No limit"></label>
+        <dl class="readout" id="dataSpec"></dl>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Power<button type="button" class="info" data-tip="Circuits are sized on max (full white) watts so a bright frame can't trip a breaker. Usable watts per circuit = breaker amps × safety factor × volts × power factor." aria-label="About power">i</button></h2></div>
+      <div class="stack">
+        <div class="seg full" role="group" aria-label="Voltage"><button type="button" data-k="volt" data-v="120">120 V</button><button type="button" data-k="volt" data-v="208-1">208 V 1-phase</button><button type="button" data-k="volt" data-v="208-3">208 V 3-phase</button></div>
+        <div class="row r3"><label class="f">Breaker (A)<input inputmode="decimal" data-k="breaker" data-num></label><label class="f">Safety %<input inputmode="decimal" data-k="safety" data-num></label><label class="f">Power factor<input inputmode="decimal" data-k="pf" data-num></label></div>
+        <div class="row r2">
+          <label class="f">Pattern<select data-k="powPat"><option value="hsnake">Horizontal snake</option><option value="vsnake">Vertical snake</option><option value="topdown">Top-down</option><option value="bottomup">Bottom-up</option></select></label>
+          <label class="f">Start side (rear)<select data-k="powStart"><option value="left">Rear left</option><option value="right">Rear right</option></select></label>
+        </div>
+        <label class="switch"><input type="checkbox" data-k="powFill"> Fill each circuit (ignore row/column ends)</label>
+        <div class="row r2"><label class="f">Max cabinets per jumper chain<input inputmode="numeric" data-k="maxJump" data-num placeholder="No limit"></label><label class="f">Circuits per distro drop<input inputmode="numeric" data-k="perDrop" data-num></label></div>
+        <dl class="readout" id="powSpec"></dl>
+      </div>
+    </section>
+
+    <p class="disc">The panel and processor numbers come from manufacturer spec sheets. Check them against your equipment before you rely on them for a show. This tool was created by AI.</p>
+  </div>
+
+  <!-- ===== Main column ===== -->
+  <div class="col mainc">
+    <div class="tiles" id="tiles"></div>
+    <div class="warns" id="warns"></div>
+
+    <section class="panel stage-panel">
+      <div class="stage-bar">
+        <div class="seg" role="group" aria-label="Layers"><button type="button" data-k="layer" data-v="data">Data only</button><button type="button" data-k="layer" data-v="power">Power only</button><button type="button" data-k="layer" data-v="combined">Combined</button></div>
+        <label class="switch"><input type="checkbox" data-k="labels"> Labels / port load</label>
+        <div class="seg" role="group" aria-label="View"><button type="button" data-k="view" data-v="rear">Rear view</button><button type="button" data-k="view" data-v="front">Front view</button></div>
+      </div>
+      <div class="stage" id="stage"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="gear">Gear list</button>
+        <button type="button" role="tab" data-tab="chain">Signal chain</button>
+        <button type="button" role="tab" data-tab="data">Port schedule</button>
+        <button type="button" role="tab" data-tab="power">Circuit schedule</button>
+      </div>
+      <div id="tabBody"></div>
+    </section>
+  </div>
+</main>
+
+<div id="printView"></div>
+
+<dialog id="panelDlg">
+  <form class="dlg" method="dialog" id="panelForm">
+    <h2 id="panelDlgTitle">Add panel to library</h2>
+    <label class="f">Panel name<input name="name" required></label>
+    <div class="row r2"><label class="f">Cabinet width (mm)<input name="w" inputmode="decimal" required></label><label class="f">Cabinet height (mm)<input name="h" inputmode="decimal" required></label></div>
+    <div class="seg full" role="group" aria-label="Pixels from"><button type="button" data-resmode="px" aria-pressed="true">Cabinet resolution (px)</button><button type="button" data-resmode="pitch" aria-pressed="false">Pixel pitch (mm)</button></div>
+    <div class="row r2" id="dlgPx"><label class="f">Pixels wide<input name="px" inputmode="numeric"></label><label class="f">Pixels high<input name="py" inputmode="numeric"></label></div>
+    <label class="f" id="dlgPitch" hidden>Pixel pitch (mm)<input name="pitch" inputmode="decimal"></label>
+    <div class="row r3"><label class="f">Max watts<input name="maxW" inputmode="decimal" required></label><label class="f">Typical watts<input name="typW" inputmode="decimal" required></label><label class="f">Weight (kg)<input name="kg" inputmode="decimal"></label></div>
+    <div class="row r2"><label class="chk"><input type="checkbox" name="v120" checked> Works on 120 V</label><label class="chk"><input type="checkbox" name="v208" checked> Works on 208 V</label></div>
+    <p class="hint" id="dlgMsg"></p>
+    <div class="dlg-foot"><button type="button" class="btn" value="cancel" id="dlgCancel">Cancel</button><button type="submit" class="btn primary" id="dlgOk">Add to library</button></div>
+  </form>
+</dialog>
+
+<dialog id="libDlg">
+  <div class="dlg">
+    <h2>Panel library</h2>
+    <p class="hint">Built-in panels are set in the <code>PANEL_PRESETS</code> list at the top of the script in <code>index.html</code>. Panels you add are kept in this browser and saved in your <code>.json</code> files.</p>
+    <div class="lib-list" id="libList"></div>
+    <div class="dlg-foot"><button type="button" class="btn" id="libNew">Add panel…</button><button type="button" class="btn primary" id="libClose">Done</button></div>
+  </div>
+</dialog>
+
+<div id="tipPop" hidden></div>
+
+<script>
+'use strict';
+const APP_VERSION = '1.00';
+
+/* =====================================================================
+   1. LIBRARY DATA
+   Edit these lists to change the built-in presets. Each entry is plain JSON.
+   Panels:  w/h = cabinet size in mm, px/py = cabinet resolution, kg = weight,
+            maxW/typW = max (full white) and typical (show) watts,
+            v120/v208 = which supply voltages the power supply accepts.
+   Values from ROE Visual spec sheets (Diamond DM2.6, Graphite GP2.6 standard, not 4-in-1).
+   ===================================================================== */
+const PANEL_PRESETS = [
+  {id:'roe-dm26', name:'ROE Diamond DM2.6', w:500, h:500,  px:192, py:192, kg:5.76, maxW:180, typW:90,  v120:true, v208:true},
+  {id:'roe-gp26', name:'ROE Graphite GP2.6', w:500, h:1000, px:192, py:384, kg:9.0,  maxW:320, typW:160, v120:true, v208:true},
+];
+/* Processors. portPx = pixels one 1G port carries at 8-bit (24 bits per pixel), 60 Hz.
+   mode 'xd': the processor sends 10G fiber trunks to distribution boxes, each with portsPerXd 1G outputs.
+   mode 'direct': 1G ports are on the processor itself. */
+const PROCESSOR_PRESETS = [
+  {id:'sx40', name:'Brompton Tessera SX40', short:'SX40', pixelCap:9000000, portPx:525000, mode:'xd', trunks:4, portsPerXd:10, xdName:'Tessera XD'},
+];
+const CUSTOM_PROC = {name:'Custom processor', short:'Custom', pixelCap:4000000, portPx:525000, mode:'direct', trunks:4, portsPerXd:10, ports:8, xdName:'Distribution box'};
+const CUSTOM_PANEL = {name:'Custom panel', w:500, h:500, px:192, py:192, kg:8, maxW:200, typW:80, v120:true, v208:true};
+
+/* =====================================================================
+   2. STATE (saved in this browser and in .json files)
+   ===================================================================== */
+const STORE = 'ledwiring-state-v1', LIBSTORE = 'ledwiring-library-v1';
+const DEFAULTS = {
+  name:'Untitled LED wall', panelId:'roe-dm26', custom:{...CUSTOM_PANEL},
+  sizeMode:'cab', cols:14, rows:8, tw:7000, th:4000, unit:'ft',
+  procId:'sx40', customProc:{...CUSTOM_PROC}, bits:8, fps:60, procRed:0,
+  dataPat:'hsnake', dataStart:'left', dataFill:false, dataRed:false, maxRun:'',
+  volt:'208-3', breaker:20, safety:80, pf:1, powPat:'vsnake', powStart:'left', powFill:false, maxJump:'', perDrop:6,
+  layer:'combined', labels:true, view:'rear', tab:'gear', theme:'auto',
+};
+let S = load(STORE, {});
+S = {...DEFAULTS, ...S, custom:{...CUSTOM_PANEL, ...(S.custom || {})}, customProc:{...CUSTOM_PROC, ...(S.customProc || {})}};
+let LIB = load(LIBSTORE, []);
+if (!Array.isArray(LIB)) LIB = [];
+
+function load(key, fb){ try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fb : v; } catch (e) { return fb; } }
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); localStorage.setItem(LIBSTORE, JSON.stringify(LIB)); } catch (e) {} }
+
+const allPanels = () => [...PANEL_PRESETS, ...LIB];
+function panel(){
+  if (S.panelId === 'custom') return {id:'custom', ...S.custom};
+  return allPanels().find(p => p.id === S.panelId) || PANEL_PRESETS[0];
+}
+function processor(){
+  if (S.procId === 'custom') return {id:'custom', ...S.customProc};
+  return PROCESSOR_PRESETS.find(p => p.id === S.procId) || PROCESSOR_PRESETS[0];
+}
+
+/* =====================================================================
+   3. CALCULATION ENGINE (no drawing in here)
+   ===================================================================== */
+const num = (v, d = 0) => { const n = parseFloat(v); return Number.isFinite(n) ? n : d; };
+const pos = (v, d = 0) => Math.max(0, num(v, d));
+
+/* Walk the wall in the chosen pattern and cut it into chains of at most `cap` cabinets.
+   Coordinates returned are front-numbered: c = 0 is the column at the front-left, r = 0 is the top row.
+   Patterns are described as seen from the rear, where the crew works, so "rear left" is the front's right-hand column.
+   - Snakes zig-zag continuously from line to line; top-down / bottom-up start every run at the top or bottom edge.
+   - Normally a run holds whole rows (or columns); if one line is longer than a run allows, it is split into even pieces.
+   - fill = true ignores line ends and packs each chain to `cap`, for the fewest ports or circuits. */
+function buildChains(cols, rows, cap, pattern, start, fill){
+  cap = Math.floor(cap);
+  if (!(cap >= 1) || cols < 1 || rows < 1) return [];
+  const horiz = pattern === 'hsnake', restart = pattern === 'topdown' || pattern === 'bottomup';
+  const nLines = horiz ? rows : cols, len = horiz ? cols : rows;
+  const fromStart = i => start === 'left' ? cols - 1 - i : i;
+  const cell = (li, p) => horiz ? {c: fromStart(p), r: li} : {c: fromStart(li), r: pattern === 'bottomup' ? rows - 1 - p : p};
+  const line = (li, fwd) => { const a = []; for (let j = 0; j < len; j++) a.push(cell(li, fwd ? j : len - 1 - j)); return a; };
+  const runs = [];
+  if (fill){
+    let path = [];
+    for (let li = 0; li < nLines; li++) path = path.concat(line(li, li % 2 === 0));
+    for (let i = 0; i < path.length; i += cap) runs.push(path.slice(i, i + cap));
+    return runs;
+  }
+  const per = Math.floor(cap / len);
+  if (per >= 1){
+    for (let g = 0; g < nLines; g += per){
+      let run = [];
+      for (let k = 0; k < per && g + k < nLines; k++) run = run.concat(line(g + k, restart ? k % 2 === 0 : (g + k) % 2 === 0));
+      runs.push(run);
+    }
+  } else {
+    const segs = Math.ceil(len / cap), size = Math.ceil(len / segs);
+    for (let li = 0; li < nLines; li++){
+      const order = line(li, restart ? true : li % 2 === 0);
+      for (let i = 0; i < order.length; i += size) runs.push(order.slice(i, i + size));
+    }
+  }
+  return runs;
+}
+
+function calc(){
+  const P = panel(), proc = processor(), warns = [];
+  const pxCab = Math.round(pos(P.px)) * Math.round(pos(P.py));
+  let cols, rows;
+  if (S.sizeMode === 'size'){
+    cols = Math.max(1, Math.round(pos(S.tw) / Math.max(1, pos(P.w, 1))));
+    rows = Math.max(1, Math.round(pos(S.th) / Math.max(1, pos(P.h, 1))));
+  } else {
+    cols = Math.max(1, Math.round(pos(S.cols, 1)));
+    rows = Math.max(1, Math.round(pos(S.rows, 1)));
+  }
+  cols = Math.min(cols, 200); rows = Math.min(rows, 200);
+  const n = cols * rows;
+  const wall = {cols, rows, n, resW: cols * Math.round(pos(P.px)), resH: rows * Math.round(pos(P.py)),
+    wMM: cols * pos(P.w), hMM: rows * pos(P.h), kg: n * pos(P.kg)};
+  wall.px = wall.resW * wall.resH;
+
+  /* --- Data: pixels per 1G port ---
+     portCap = published 8-bit 60 Hz figure × (60 ÷ frame rate) × (24 ÷ bits per pixel). */
+  const bpp = S.bits * 3, fps = pos(S.fps, 60) || 60;
+  const portCap = Math.floor(pos(proc.portPx) * (60 / fps) * (24 / bpp));
+  let cabPerPort = pxCab > 0 ? Math.floor(portCap / pxCab) : 0;
+  const maxRun = Math.floor(pos(S.maxRun));
+  if (maxRun >= 1) cabPerPort = Math.min(cabPerPort, maxRun);
+  if (pxCab <= 0) warns.push({err:true, t:'The panel needs a pixel resolution.'});
+  else if (cabPerPort < 1) warns.push({err:true, t:`One cabinet (${fmt(pxCab)} px) is more than a 1G port carries at ${S.bits}-bit ${fps} Hz (${fmt(portCap)} px).`});
+  const runCells = buildChains(cols, rows, cabPerPort, S.dataPat, S.dataStart, S.dataFill);
+  const runs = runCells.map((cells, i) => ({i, label:'D' + (i + 1), cells, px: cells.length * pxCab, load: portCap ? cells.length * pxCab / portCap : 0}));
+
+  /* --- Processors and XD boxes ---
+     Runs are given to processors in order. A processor is full when the next run would pass its pixel limit or port count.
+     Each run takes one 1G port, or two with data redundancy (the backup return line needs its own port). */
+  const isXd = proc.mode === 'xd';
+  const ppx = Math.max(1, Math.floor(pos(proc.portsPerXd, 10)));
+  const portsPerProc = isXd ? Math.max(1, Math.floor(pos(proc.trunks, 1))) * ppx : Math.max(1, Math.floor(pos(proc.ports, 1)));
+  const pixelCap = pos(proc.pixelCap) || Infinity;
+  const need = S.dataRed ? 2 : 1;
+  const procs = []; let cur = null;
+  for (const r of runs){
+    if (!cur || cur.px + r.px > pixelCap || cur.ports + need > portsPerProc){ cur = {i: procs.length, runs: [], px: 0, ports: 0}; procs.push(cur); }
+    cur.runs.push(r); cur.px += r.px; cur.ports += need; r.proc = cur.i;
+  }
+  // Port numbering inside each processor: primaries first, then the backup return lines, packed onto as few XDs as possible.
+  let xdBase = 0;
+  for (const p of procs){
+    const k = p.runs.length;
+    const name = idx => isXd ? {xd: xdBase + Math.floor(idx / ppx) + 1, port: idx % ppx + 1} : {xd: 0, port: idx + 1};
+    p.runs.forEach((r, j) => { r.port = name(j); if (S.dataRed) r.bport = name(k + j); });
+    p.xds = isXd ? Math.ceil(p.ports / ppx) : 0;
+    p.xdFirst = xdBase + 1; xdBase += p.xds;
+    p.pixLoad = isFinite(pixelCap) ? p.px / pixelCap : 0;
+    p.portLoad = p.ports / portsPerProc;
+  }
+  const xdTotal = xdBase, primProcs = procs.length, totalProcs = primProcs * (S.procRed ? 2 : 1);
+  const portsUsed = runs.length * need;
+  if (wall.px > 0 && isFinite(pixelCap) && pxCab > pixelCap) warns.push({err:true, t:'One cabinet has more pixels than the processor limit.'});
+
+  /* --- Power ---
+     usable W per circuit = breaker A × safety % × V × PF; cabinets per circuit = floor(usable W ÷ max W per cabinet). */
+  const V = S.volt === '120' ? 120 : 208, pf = Math.min(1, pos(S.pf, 1)) || 1;
+  const breaker = pos(S.breaker, 20), safety = pos(S.safety, 80) / 100;
+  const usableA = breaker * safety, usableW = usableA * V * pf;
+  const maxW = pos(P.maxW), typW = pos(P.typW);
+  let cabPerCirc = maxW > 0 ? Math.floor(usableW / maxW) : 0;
+  const maxJump = Math.floor(pos(S.maxJump));
+  if (maxJump >= 1) cabPerCirc = Math.min(cabPerCirc, maxJump);
+  if (maxW <= 0) warns.push({err:true, t:'The panel needs a max wattage.'});
+  else if (cabPerCirc < 1) warns.push({err:true, t:`One cabinet (${fmt(maxW)} W) is more than a ${breaker} A circuit can carry at ${V} V with the ${Math.round(safety * 100)}% safety factor (${fmt(Math.round(usableW))} W).`});
+  if (S.volt === '120' && P.v120 === false) warns.push({err:true, t:`${P.name} is not listed as working on 120 V.`});
+  if (S.volt !== '120' && P.v208 === false) warns.push({err:true, t:`${P.name} is not listed as working on 208 V.`});
+  const PAIRS = S.volt === '208-3' ? ['L1-L2', 'L2-L3', 'L3-L1'] : S.volt === '208-1' ? ['L1-L2'] : ['L1', 'L2', 'L3'];
+  const circCells = buildChains(cols, rows, cabPerCirc, S.powPat, S.powStart, S.powFill);
+  const circuits = circCells.map((cells, i) => {
+    const w = cells.length * maxW, t = cells.length * typW;
+    return {i, label:'P' + (i + 1), cells, maxW: w, typW: t, ampsMax: w / (V * pf), ampsTyp: t / (V * pf), phase: PAIRS[i % PAIRS.length], load: w / (V * pf) / breaker};
+  });
+  // Current on each leg of the distro.
+  // 120 V: each circuit is one leg to neutral. 208 V 1-phase: both legs carry the full current.
+  // 208 V 3-phase: each leg carries two of the line-to-line loads, 120° apart: I = √(a² + b² + a·b).
+  const legs = {};
+  const pairSum = (key, k) => circuits.filter(c => c.phase === key).reduce((s, c) => s + c[k], 0);
+  for (const k of ['ampsMax', 'ampsTyp']){
+    if (S.volt === '120') for (const L of ['L1', 'L2', 'L3']) (legs[L] ||= {})[k] = pairSum(L, k);
+    else if (S.volt === '208-1') for (const L of ['L1', 'L2']) (legs[L] ||= {})[k] = pairSum('L1-L2', k);
+    else {
+      const a = pairSum('L1-L2', k), b = pairSum('L2-L3', k), c = pairSum('L3-L1', k);
+      const f = (x, y) => Math.sqrt(x * x + y * y + x * y);
+      (legs.L1 ||= {})[k] = f(a, c); (legs.L2 ||= {})[k] = f(a, b); (legs.L3 ||= {})[k] = f(b, c);
+    }
+  }
+  const W = {max: n * maxW, typ: n * typW};
+  // Total amps for each supply type: single-phase I = W ÷ (V × PF); balanced 3-phase per leg I = W ÷ (208 × √3 × PF).
+  const amps = {
+    '120': {max: W.max / (120 * pf), typ: W.typ / (120 * pf)},
+    '208-1': {max: W.max / (208 * pf), typ: W.typ / (208 * pf)},
+    '208-3': {max: W.max / (208 * Math.sqrt(3) * pf), typ: W.typ / (208 * Math.sqrt(3) * pf)},
+  };
+  const perDrop = Math.max(1, Math.floor(pos(S.perDrop, 6)));
+  const drops = Math.ceil(circuits.length / perDrop);
+
+  return {P, proc, pxCab, wall, portCap, cabPerPort, runs, procs, primProcs, totalProcs, xdTotal, portsUsed, portsPerProc, pixelCap, isXd, ppx,
+    V, pf, breaker, safety, usableA, usableW, cabPerCirc, circuits, legs, W, amps, drops, perDrop, warns};
+}
+
+/* =====================================================================
+   4. FORMATTING
+   ===================================================================== */
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const fx = (n, d = 1) => (Math.round(n * 10 ** d) / 10 ** d).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+const pct = x => Math.round(x * 100) + '%';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+function ftIn(mm){ const inch = mm / 25.4; let f = Math.floor(inch / 12), i = Math.round((inch - f * 12) * 10) / 10; if (i >= 12){ f++; i = 0; } return `${f}' ${i}"`; }
+const meters = mm => fx(mm / 1000, 2) + ' m';
+const cabName = c => `${c.c + 1},${c.r + 1}`;
+const portLabel = (p, R) => !p ? '—' : R.isXd ? `XD${p.xd}·${p.port}` : `Port ${p.port}`;
+const voltName = v => v === '120' ? '120 V' : v === '208-1' ? '208 V 1-phase' : '208 V 3-phase';
+// Distinct colors per run / circuit, spaced by the golden angle so neighbors never look alike.
+const dataColor = i => `hsl(${(195 + i * 137.508) % 360} 80% 56%)`;
+const powColor = i => `hsl(${(28 + i * 137.508) % 360} 88% 54%)`;
+
+/* =====================================================================
+   5. WIRING DIAGRAM (SVG, in millimeters so it stays to scale)
+   ===================================================================== */
+function wallSvg(R, o){
+  const {cols, rows} = R.wall, P = R.P;
+  const cw = Math.max(1, pos(P.w, 500)), ch = Math.max(1, pos(P.h, 500)), u = Math.min(cw, ch);
+  const W = cols * cw, H = rows * ch, m = u * 0.75;
+  const X = c => (o.view === 'rear' ? cols - 1 - c : c) * cw;
+  const showData = o.layer !== 'power', showPow = o.layer !== 'data', both = o.layer === 'combined';
+  const runOf = {}, circOf = {};
+  R.runs.forEach(r => r.cells.forEach((c, k) => runOf[c.c + ',' + c.r] = {r, k}));
+  R.circuits.forEach(p => p.cells.forEach((c, k) => circOf[c.c + ',' + c.r] = {p, k}));
+  const fs = u * 0.13;
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-m} ${-m} ${W + 2 * m} ${H + 2 * m}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${o.view === 'rear' ? 'Rear' : 'Front'} view wiring diagram, ${cols} by ${rows} cabinets">`;
+  s += `<rect class="w-bg" x="${-m}" y="${-m}" width="${W + 2 * m}" height="${H + 2 * m}"/>`;
+  // Cabinets, tinted by run or circuit when one layer is shown on its own.
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++){
+    const key = c + ',' + r, d = runOf[key], p = circOf[key];
+    let fill = '';
+    if (o.layer === 'data' && d) fill = ` style="fill:${dataColor(d.r.i)};fill-opacity:.18"`;
+    if (o.layer === 'power' && p) fill = ` style="fill:${powColor(p.p.i)};fill-opacity:.18"`;
+    const tip = `Cabinet ${c + 1},${r + 1}` + (d ? ` · ${d.r.label} #${d.k + 1}` : '') + (p ? ` · ${p.p.label} #${p.k + 1}` : '');
+    s += `<rect class="cab" x="${X(c)}" y="${r * ch}" width="${cw}" height="${ch}" stroke-width="${u * 0.012}"${fill}><title>${tip}</title></rect>`;
+    if (o.labels) s += `<text class="cabnum" x="${X(c) + cw - u * 0.05}" y="${r * ch + ch - u * 0.05}" font-size="${fs * 0.8}" text-anchor="end">${c + 1},${r + 1}</text>`;
+  }
+  // Column numbers above, row numbers on the left (front numbering), and which side we're looking at.
+  for (let c = 0; c < cols; c++) s += `<text class="axis" x="${X(c) + cw / 2}" y="${-u * 0.12}" font-size="${fs}" text-anchor="middle">${c + 1}</text>`;
+  for (let r = 0; r < rows; r++) s += `<text class="axis" x="${-u * 0.12}" y="${r * ch + ch / 2 + fs * 0.35}" font-size="${fs}" text-anchor="end">${r + 1}</text>`;
+  s += `<text class="viewtag" x="${W / 2}" y="${H + m * 0.55}" font-size="${fs * 1.1}" text-anchor="middle">${o.view === 'rear' ? 'REAR VIEW · AS SEEN FROM BEHIND THE WALL' : 'FRONT VIEW · AS SEEN BY THE AUDIENCE'}</text>`;
+
+  const center = (c, off) => [X(c.c) + cw / 2 + off, c.r * ch + ch / 2 + off];
+  const chevrons = (pts, color, size) => {
+    let t = '';
+    for (let i = 0; i + 1 < pts.length; i++){
+      const [x1, y1] = pts[i], [x2, y2] = pts[i + 1], mx = (x1 + x2) / 2, my = (y1 + y2) / 2, a = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+      t += `<path d="M${-size} ${-size * 0.8} L${size} 0 L${-size} ${size * 0.8} Z" transform="translate(${mx} ${my}) rotate(${a})" fill="${color}"/>`;
+    }
+    return t;
+  };
+  const pill = (x, y, text, color, anchor = 'start') => {
+    const w = text.length * fs * 0.62 + fs * 0.7, h = fs * 1.45;
+    const x0 = anchor === 'end' ? x - w : x;
+    return `<g><rect x="${x0}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${color}"/><text class="pill-t" x="${x0 + w / 2}" y="${y + h * 0.7}" font-size="${fs}" text-anchor="middle">${esc(text)}</text></g>`;
+  };
+  const poly = pts => pts.map(p => p.join(',')).join(' ');
+  let labels = '';
+
+  if (showPow){
+    const off = both ? u * 0.16 : 0;
+    for (const p of R.circuits){
+      const col = powColor(p.i), pts = p.cells.map(c => center(c, off));
+      s += `<polyline points="${poly(pts)}" fill="none" stroke="${col}" stroke-width="${u * 0.085}" stroke-opacity=".75" stroke-linecap="round" stroke-linejoin="round"/>`;
+      for (const [x, y] of pts) s += `<circle cx="${x}" cy="${y}" r="${u * 0.06}" fill="${col}"/>`;
+      s += `<rect x="${pts[0][0] - u * 0.09}" y="${pts[0][1] - u * 0.09}" width="${u * 0.18}" height="${u * 0.18}" fill="${col}" stroke="#000" stroke-width="${u * 0.012}"><title>${p.label} power in</title></rect>`;
+      if (o.labels){ const c0 = p.cells[0]; labels += pill(X(c0.c) + u * 0.05, c0.r * ch + ch - fs * 1.45 - u * 0.05, `${p.label} · ${fx(p.ampsMax)}A`, col); }
+    }
+  }
+  if (showData){
+    const off = both ? -u * 0.14 : 0;
+    for (const r of R.runs){
+      const col = dataColor(r.i), pts = r.cells.map(c => center(c, off));
+      if (S.dataRed){
+        const bpts = r.cells.map(c => center(c, off + u * 0.07)).reverse();
+        s += `<polyline points="${poly(bpts)}" fill="none" stroke="${col}" stroke-width="${u * 0.025}" stroke-dasharray="${u * 0.07} ${u * 0.05}" stroke-linejoin="round"/>`;
+        const [lx, ly] = bpts[0];
+        s += `<circle cx="${lx}" cy="${ly}" r="${u * 0.05}" fill="none" stroke="${col}" stroke-width="${u * 0.02}"><title>${r.label} backup return</title></circle>`;
+      }
+      s += `<polyline points="${poly(pts)}" fill="none" stroke="${col}" stroke-width="${u * 0.032}" stroke-linejoin="round" stroke-linecap="round"/>`;
+      s += chevrons(pts, col, u * 0.045);
+      s += `<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="${u * 0.065}" fill="${col}" stroke="#000" stroke-width="${u * 0.012}"><title>${r.label} data in</title></circle>`;
+      if (o.labels){
+        const c0 = r.cells[0], cl = r.cells[r.cells.length - 1];
+        labels += pill(X(c0.c) + u * 0.05, c0.r * ch + u * 0.05, `${r.label} · ${pct(r.load)}`, col);
+        if (S.dataRed) labels += pill(X(cl.c) + cw - u * 0.05, cl.r * ch + u * 0.05 + (cl === c0 ? fs * 1.6 : 0), `${r.label}R`, col, 'end');
+      }
+    }
+  }
+  return s + labels + '</svg>';
+}
+
+function legendHtml(){
+  const sw = (svg) => `<svg width="34" height="12" viewBox="0 0 34 12">${svg}</svg>`;
+  let h = '';
+  if (S.layer !== 'power'){
+    h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--accent)" stroke-width="2"/><circle cx="5" cy="6" r="4" fill="var(--accent)"/>')}Data run (dot = data in, arrows = direction)</span>`;
+    if (S.dataRed) h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/>')}Backup return line</span>`;
+  }
+  if (S.layer !== 'data') h += `<span>${sw('<line x1="4" y1="6" x2="30" y2="6" stroke="hsl(28 88% 54%)" stroke-width="5" stroke-linecap="round" opacity=".75"/><rect x="1" y="2" width="8" height="8" fill="hsl(28 88% 54%)"/>')}Power circuit (square = power in)</span>`;
+  h += `<span>Cabinet numbers count from the front-left: column, row.</span>`;
+  return h;
+}
+
+/* =====================================================================
+   6. TABLES (shared by the screen and the print page)
+   ===================================================================== */
+function gearRows(R){
+  const proc = R.proc, a = R.amps[S.volt];
+  const rows = [
+    ['LED cabinets', `${fmt(R.wall.n)} × ${R.P.name}`],
+    ['Processors', `${R.primProcs} × ${proc.name}` + (S.procRed ? ` + ${R.primProcs} backup` : '') + ` (${R.totalProcs} total)`],
+  ];
+  if (R.isXd){
+    rows.push([`${proc.xdName || 'XD'} boxes`, `${R.xdTotal}`]);
+    rows.push(['10G fiber trunks', `${R.xdTotal * (S.procRed ? 2 : 1)}` + (S.procRed ? ' (primary + backup processor to each XD)' : ' (processor to XD)')]);
+  }
+  rows.push(['1G Cat6 home runs', `${R.portsUsed}` + (S.dataRed ? ` (${R.runs.length} primary + ${R.runs.length} backup)` : '')]);
+  rows.push(['Cabinet data jumpers', `${fmt(Math.max(0, R.wall.n - R.runs.length))}`]);
+  rows.push(['Power circuits', `${R.circuits.length} × ${fx(R.breaker, 0)} A at ${voltName(S.volt)}`]);
+  rows.push(['Cabinet power jumpers', `${fmt(Math.max(0, R.wall.n - R.circuits.length))}`]);
+  rows.push(['Distro drops', `${R.drops} (${R.perDrop} circuits each)`]);
+  rows.push(['Total power', `${fmt(R.W.max)} W max · ${fmt(R.W.typ)} W typical`]);
+  rows.push([`Total amps (${voltName(S.volt)}${S.volt === '208-3' ? ', per leg' : ''})`, `${fx(a.max)} A max · ${fx(a.typ)} A typical`]);
+  rows.push(['Cabinet weight', `${fx(R.wall.kg, 1)} kg · ${fmt(R.wall.kg * 2.20462)} lb (no rigging or ground support)`]);
+  return rows;
+}
+function gearHtml(R){
+  let h = `<div class="tblwrap"><table class="t"><tbody>${gearRows(R).map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</tbody></table></div>`;
+  h += `<h3 style="margin-top:14px">Amps by supply</h3><div class="tblwrap"><table class="t"><thead><tr><th>Supply</th><th class="n">Max load</th><th class="n">Typical load</th></tr></thead><tbody>`;
+  for (const v of ['120', '208-1', '208-3']) h += `<tr><td>${voltName(v)}${v === '208-3' ? ' (per leg, balanced)' : ''}</td><td class="n">${fx(R.amps[v].max)} A</td><td class="n">${fx(R.amps[v].typ)} A</td></tr>`;
+  h += `</tbody></table></div>`;
+  h += legsHtml(R);
+  return h;
+}
+function legsHtml(R){
+  const L = Object.keys(R.legs);
+  if (!L.length || !R.circuits.length) return '';
+  const label = S.volt === '120' ? 'Load per leg (circuits spread over a 120/208 V 3-phase distro)' : 'Load per leg';
+  let h = `<h3 style="margin-top:14px">${label}</h3><div class="tblwrap"><table class="t"><thead><tr><th>Leg</th><th class="n">Max</th><th class="n">Typical</th></tr></thead><tbody>`;
+  for (const k of L) h += `<tr><td>${k}</td><td class="n">${fx(R.legs[k].ampsMax)} A</td><td class="n">${fx(R.legs[k].ampsTyp)} A</td></tr>`;
+  return h + '</tbody></table></div>';
+}
+function dataHtml(R){
+  let h = `<p class="hint" style="margin-bottom:8px">${fmt(R.portCap)} px per 1G port at ${S.bits}-bit ${S.fps} Hz · up to ${R.cabPerPort} cabinets (${fmt(R.pxCab)} px each) per run.</p>`;
+  h += `<div class="tblwrap"><table class="t"><thead><tr><th>Run</th><th>Processor</th><th>Port</th>${S.dataRed ? '<th>Backup port</th>' : ''}<th class="n">Cabinets</th><th>First → last</th><th class="n">Pixels</th><th class="n">Port load</th></tr></thead><tbody>`;
+  for (const r of R.runs) h += `<tr><td><span class="sw" style="background:${dataColor(r.i)}"></span>${r.label}</td><td>${esc(R.proc.short || R.proc.name)} #${r.proc + 1}</td><td class="mono">${portLabel(r.port, R)}</td>${S.dataRed ? `<td class="mono">${portLabel(r.bport, R)}</td>` : ''}<td class="n">${r.cells.length}</td><td class="mono">${cabName(r.cells[0])} → ${cabName(r.cells[r.cells.length - 1])}</td><td class="n">${fmt(r.px)}</td><td class="n">${pct(r.load)}</td></tr>`;
+  h += `<tr class="tot"><td>${R.runs.length} runs</td><td></td><td></td>${S.dataRed ? '<td></td>' : ''}<td class="n">${fmt(R.wall.n)}</td><td></td><td class="n">${fmt(R.wall.px)}</td><td></td></tr>`;
+  return h + '</tbody></table></div>';
+}
+function powerHtml(R){
+  let h = `<p class="hint" style="margin-bottom:8px">${fx(R.breaker, 0)} A breaker × ${Math.round(R.safety * 100)}% = ${fx(R.usableA)} A usable × ${R.V} V${R.pf < 1 ? ` × PF ${R.pf}` : ''} = ${fmt(R.usableW)} W per circuit · up to ${R.cabPerCirc} cabinets (${fmt(pos(R.P.maxW))} W max each).</p>`;
+  h += `<div class="tblwrap"><table class="t"><thead><tr><th>Circuit</th><th>Leg</th><th class="n">Cabinets</th><th>First → last</th><th class="n">Max W</th><th class="n">Max A</th><th class="n">Typical A</th><th class="n">Breaker load</th></tr></thead><tbody>`;
+  for (const p of R.circuits) h += `<tr><td><span class="sw" style="background:${powColor(p.i)}"></span>${p.label}</td><td class="mono">${p.phase}</td><td class="n">${p.cells.length}</td><td class="mono">${cabName(p.cells[0])} → ${cabName(p.cells[p.cells.length - 1])}</td><td class="n">${fmt(p.maxW)}</td><td class="n">${fx(p.ampsMax)}</td><td class="n">${fx(p.ampsTyp)}</td><td class="n">${pct(p.load)}</td></tr>`;
+  h += `<tr class="tot"><td>${R.circuits.length} circuits</td><td>${R.drops} drop${R.drops === 1 ? '' : 's'}</td><td class="n">${fmt(R.wall.n)}</td><td></td><td class="n">${fmt(R.W.max)}</td><td class="n">${fx(R.circuits.reduce((s, p) => s + p.ampsMax, 0))}</td><td class="n">${fx(R.circuits.reduce((s, p) => s + p.ampsTyp, 0))}</td><td></td></tr>`;
+  return h + '</tbody></table></div>' + legsHtml(R);
+}
+function chainHtml(R){
+  if (!R.procs.length) return '<p class="hint">No data runs yet.</p>';
+  const proc = R.proc, short = esc(proc.short || proc.name);
+  let h = `<p class="hint" style="margin-bottom:10px">${R.isXd ? `Processor (10G fiber) → ${esc(proc.xdName || 'XD')} box → 1G Cat6 runs → LED cabinets` : 'Processor → 1G Cat6 runs → LED cabinets'}${S.procRed ? '. The backup processor feeds the second 10G input on every XD.' : ''}</p><div class="chain">`;
+  for (const p of R.procs){
+    h += `<div class="chain-proc"><div class="chain-head"><span class="node">${short} #${p.i + 1} · Primary</span>${S.procRed ? `<span class="node bk">${short} #${p.i + 1}B · Backup</span>` : ''}<span class="link">${pct(p.pixLoad)} pixel load · ${p.ports}/${R.portsPerProc} ports</span></div>`;
+    const byXd = {};
+    for (const r of p.runs){ (byXd[r.port.xd] ||= []).push({r, port: r.port.port, b: false}); if (r.bport) (byXd[r.bport.xd] ||= []).push({r, port: r.bport.port, b: true}); }
+    const xdList = R.isXd ? Array.from({length: p.xds}, (_, k) => p.xdFirst + k) : [0];
+    const slots = R.isXd ? R.ppx : R.portsPerProc;
+    h += '<div class="xds">';
+    for (const x of xdList){
+      const used = byXd[x] || [];
+      h += `<div class="xd"><h4><span>${R.isXd ? `${esc(proc.xdName || 'XD')} ${x}` : 'Processor ports'}</span><span class="link">${R.isXd ? `10G fiber ← ${short} #${p.i + 1}${S.procRed ? ' + backup' : ''}` : ''}</span></h4><div class="ports">`;
+      for (let q = 1; q <= slots; q++){
+        const u = used.find(e => e.port === q);
+        h += u ? `<div class="port${u.b ? ' bkp' : ''}" style="border-color:${dataColor(u.r.i)}" title="${u.r.label}${u.b ? ' backup' : ''} · ${u.r.cells.length} cabinets">${u.r.label}${u.b ? 'R' : ''}<small>${q} · ${pct(u.r.load)}</small></div>` : `<div class="port empty">—<small>${q}</small></div>`;
+      }
+      h += '</div></div>';
+    }
+    h += '</div></div>';
+  }
+  return h + '</div>';
+}
+function utilLines(R){
+  const short = esc(R.proc.short || R.proc.name);
+  return R.procs.map(p => `<div class="util"><div><b>1× ${short}${R.procs.length > 1 ? ` #${p.i + 1}` : ''}</b> — <b>${pct(p.pixLoad)}</b> Pixel Load | <b>${p.ports}/${R.portsPerProc}</b> Ports Used${R.isXd ? ` · ${p.xds} XD` : ''}</div>
+    <div class="bar" title="Pixel load"><i class="${p.pixLoad > 0.9 ? 'hot' : ''}" style="width:${Math.min(100, p.pixLoad * 100)}%"></i></div>
+    <div class="bar" title="Ports used"><i class="${p.portLoad > 0.9 ? 'hot' : ''}" style="width:${Math.min(100, p.portLoad * 100)}%"></i></div></div>`).join('')
+    + (S.procRed && R.procs.length ? `<p class="hint">+ ${R.primProcs} backup ${short} mirroring the primary${R.primProcs > 1 ? 's' : ''} (${R.totalProcs} processors total).</p>` : '');
+}
+
+/* =====================================================================
+   7. SCREEN UPDATE
+   ===================================================================== */
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const getK = k => k.split('.').reduce((o, p) => o == null ? o : o[p], S);
+function setK(k, v){ const ps = k.split('.'); let o = S; for (let i = 0; i < ps.length - 1; i++) o = o[ps[i]]; o[ps[ps.length - 1]] = v; }
+const dl = rows => rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+let R = null;
+
+function render(){
+  R = calc();
+  const P = R.P, w = R.wall;
+  $('#customPanel').hidden = S.panelId !== 'custom';
+  $('#customProc').hidden = S.procId !== 'custom';
+  $('#cpXd').hidden = S.customProc.mode !== 'xd';
+  $('#cpDirect').hidden = S.customProc.mode === 'xd';
+  $('#byCab').hidden = S.sizeMode !== 'cab';
+  $('#bySize').hidden = S.sizeMode !== 'size';
+  for (const b of $$('.seg button[data-k]')) b.setAttribute('aria-pressed', String(getK(b.dataset.k)) === b.dataset.v);
+  for (const b of $$('#themeSeg button')) b.setAttribute('aria-pressed', b.dataset.themeV === S.theme);
+  for (const b of $$('.tabs button')) b.setAttribute('aria-selected', b.dataset.tab === S.tab);
+
+  $('#panelSpec').innerHTML = dl([
+    ['Cabinet', `${fmt(pos(P.w))} × ${fmt(pos(P.h))} mm`],
+    ['Resolution', `${fmt(pos(P.px))} × ${fmt(pos(P.py))} px`],
+    ['Pixel pitch', P.px ? `${fx(pos(P.w) / pos(P.px), 2)} mm` : '—'],
+    ['Weight', `${fx(pos(P.kg), 2)} kg · ${fx(pos(P.kg) * 2.20462, 1)} lb`],
+    ['Power', `${fmt(pos(P.maxW))} W max · ${fmt(pos(P.typW))} W typical`],
+    ['Voltage', [P.v120 !== false && '120 V', P.v208 !== false && '208 V'].filter(Boolean).join(' · ') || 'none set'],
+  ]);
+  $('#wallSpec').innerHTML = dl([
+    ...(S.sizeMode === 'size' ? [['Closest fit', `${w.cols} × ${w.rows} cabinets`]] : []),
+    ['Resolution', `${fmt(w.resW)} × ${fmt(w.resH)} px`],
+    ['Total pixels', fmt(w.px)],
+    ['Size (m)', `${meters(w.wMM)} × ${meters(w.hMM)}`],
+    ['Size (ft)', `${ftIn(w.wMM)} × ${ftIn(w.hMM)}`],
+    ['Cabinets', fmt(w.n)],
+    ['Weight', `${fx(w.kg, 1)} kg · ${fmt(w.kg * 2.20462)} lb`],
+  ]);
+  $('#dataSpec').innerHTML = dl([
+    ['Per 1G port', `${fmt(R.portCap)} px`],
+    ['Cabinets per port', `${R.cabPerPort}`],
+    ['Data runs', `${R.runs.length}`],
+    ['1G ports used', `${R.portsUsed}`],
+  ]);
+  const a = R.amps[S.volt];
+  $('#powSpec').innerHTML = dl([
+    ['Usable per circuit', `${fx(R.usableA)} A · ${fmt(R.usableW)} W`],
+    ['Cabinets per circuit', `${R.cabPerCirc}`],
+    ['Circuits', `${R.circuits.length}`],
+    ['Distro drops', `${R.drops}`],
+    ['Max load', `${fmt(R.W.max)} W · ${fx(a.max)} A`],
+    ['Typical load', `${fmt(R.W.typ)} W · ${fx(a.typ)} A`],
+  ]);
+  $('#utilBox').innerHTML = utilLines(R);
+
+  const tile = (k, v, s) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  $('#tiles').innerHTML = [
+    tile('Processors', R.totalProcs, `${R.primProcs} primary${S.procRed ? ` + ${R.primProcs} backup` : ''}`),
+    R.isXd ? tile('XD boxes', R.xdTotal, `${R.xdTotal * (S.procRed ? 2 : 1)} fiber trunks`) : '',
+    tile('1G home runs', R.portsUsed, `${R.runs.length} runs${S.dataRed ? ' × 2 (backup)' : ''}`),
+    tile('Circuits', R.circuits.length, `${fx(R.breaker, 0)} A · ${R.drops} drop${R.drops === 1 ? '' : 's'}`),
+    tile('Max amps', fx(a.max), `${voltName(S.volt)}${S.volt === '208-3' ? ' per leg' : ''}`),
+    tile('Resolution', `${fmt(w.resW)}×${fmt(w.resH)}`, `${fmt(w.n)} cabinets · ${fmt(w.kg * 2.20462)} lb`),
+  ].join('');
+  $('#warns').innerHTML = R.warns.map(x => `<div class="warn${x.err ? ' err' : ''}">${esc(x.t)}</div>`).join('');
+
+  $('#stage').innerHTML = wallSvg(R, {layer: S.layer, labels: S.labels, view: S.view});
+  $('#legend').innerHTML = legendHtml();
+  $('#tabBody').innerHTML = S.tab === 'chain' ? chainHtml(R) : S.tab === 'data' ? dataHtml(R) : S.tab === 'power' ? powerHtml(R) : gearHtml(R);
+  save();
+}
+
+function fillPanelSelect(){
+  const sel = $('#panelSel');
+  sel.innerHTML = `<optgroup label="Built in">${PANEL_PRESETS.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</optgroup>`
+    + (LIB.length ? `<optgroup label="My library">${LIB.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</optgroup>` : '')
+    + `<option value="custom">Custom panel…</option>`;
+  if (!allPanels().some(p => p.id === S.panelId) && S.panelId !== 'custom') S.panelId = PANEL_PRESETS[0].id;
+  sel.value = S.panelId;
+}
+function fillProcSelect(){
+  $('#procSel').innerHTML = PROCESSOR_PRESETS.map(p => `<option value="${p.id}">${esc(p.name)} + ${esc(p.xdName)}</option>`).join('') + '<option value="custom">Custom processor…</option>';
+  $('#procSel').value = S.procId;
+}
+// Put the saved values into the inputs (on start and after opening a file).
+function syncInputs(){
+  $('#appVer').textContent = 'v' + APP_VERSION;
+  document.documentElement.dataset.theme = S.theme === 'auto' ? '' : S.theme;
+  if (S.theme === 'auto') delete document.documentElement.dataset.theme;
+  fillPanelSelect(); fillProcSelect();
+  for (const el of $$('input[data-k],select[data-k]')){
+    const v = getK(el.dataset.k);
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? '';
+  }
+  syncSizeInputs();
+}
+function syncSizeInputs(){
+  const f = S.unit === 'ft' ? 304.8 : 1000;
+  $('#tw').value = +(pos(S.tw) / f).toFixed(2);
+  $('#th').value = +(pos(S.th) / f).toFixed(2);
+}
+
+/* =====================================================================
+   8. EVENTS
+   ===================================================================== */
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'tw' || el.id === 'th'){ const f = S.unit === 'ft' ? 304.8 : 1000; S[el.id] = pos(el.value) * f; render(); return; }
+  if (!el.dataset || !el.dataset.k || el.closest('dialog')) return;
+  let v = el.type === 'checkbox' ? el.checked : el.value;
+  if (el.hasAttribute('data-num') && el.type !== 'checkbox') v = el.value === '' ? '' : num(el.value, '');
+  setK(el.dataset.k, v);
+  render();
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('.seg button[data-k]');
+  if (b){
+    const k = b.dataset.k, cur = getK(k);
+    setK(k, typeof cur === 'number' ? Number(b.dataset.v) : b.dataset.v);
+    if (k === 'sizeMode' && S.sizeMode === 'size'){ const P = panel(); S.tw = Math.round(pos(S.cols, 1)) * pos(P.w); S.th = Math.round(pos(S.rows, 1)) * pos(P.h); syncSizeInputs(); }
+    if (k === 'sizeMode' && S.sizeMode === 'cab'){ const r = calc(); S.cols = r.wall.cols; S.rows = r.wall.rows; syncInputs(); }
+    if (k === 'unit') syncSizeInputs();
+    render(); return;
+  }
+  const t = e.target.closest('.tabs button');
+  if (t){ S.tab = t.dataset.tab; render(); return; }
+  const th = e.target.closest('#themeSeg button');
+  if (th){ S.theme = th.dataset.themeV; syncInputs(); render(); }
+});
+$('#panelSel').addEventListener('change', e => { S.panelId = e.target.value; render(); });
+
+$('#btnSave').addEventListener('click', () => {
+  const data = {format: 'led-wiring-planner', version: 1, app: APP_VERSION, state: S, library: LIB};
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
+  a.download = (S.name || 'led-wall').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') + '-wiring.json';
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+$('#btnOpen').addEventListener('click', () => $('#fileIn').click());
+$('#fileIn').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (d.format !== 'led-wiring-planner' || !d.state) throw new Error('not a wiring file');
+    // Panels from the file join the library (matched by id), so a shared file brings its custom panels along.
+    for (const p of d.library || []) if (p && p.id && !LIB.some(q => q.id === p.id) && !PANEL_PRESETS.some(q => q.id === p.id)) LIB.push(p);
+    S = {...DEFAULTS, ...d.state, custom: {...CUSTOM_PANEL, ...(d.state.custom || {})}, customProc: {...CUSTOM_PROC, ...(d.state.customProc || {})}};
+    syncInputs(); render();
+  } catch (err) { alert('That file could not be opened. Choose a .json saved from the LED Wiring Planner.'); }
+});
+
+/* Print / Export PDF: builds a light, on-site page (data diagram + port schedule, power diagram + circuit schedule,
+   gear list + signal chain), then opens the browser's print window. "Save as PDF" there makes the PDF. */
+function buildPrint(){
+  const r = calc(), date = new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'});
+  const head = t => `<div class="pv-head"><h1>${esc(S.name)} — ${t}</h1><span>${esc(r.P.name)} · ${r.wall.cols} × ${r.wall.rows} · ${fmt(r.wall.resW)} × ${fmt(r.wall.resH)} px · ${date} · LED Wiring Planner v${APP_VERSION}</span></div>`;
+  const view = {labels: true, view: S.view};
+  $('#printView').innerHTML =
+    `<section class="pv-page">${head('Data wiring')}<div class="pv-svg">${wallSvg(r, {...view, layer: 'data'})}</div>${dataHtml(r)}</section>` +
+    `<section class="pv-page">${head('Power wiring')}<div class="pv-svg">${wallSvg(r, {...view, layer: 'power'})}</div>${powerHtml(r)}</section>` +
+    `<section class="pv-page">${head('Gear list & signal chain')}<div class="pv-cols"><div><h2 class="pv">Gear list</h2>${gearHtml(r)}</div><div><h2 class="pv">Processor utilization</h2>${utilLines(r)}</div></div><h2 class="pv">Signal chain</h2>${chainHtml(r)}
+      <p class="disc" style="margin-top:10px">Panel and processor numbers come from manufacturer spec sheets. Check them against your equipment before you rely on them for a show.</p></section>`;
+}
+$('#btnPrint').addEventListener('click', () => { buildPrint(); window.print(); });
+window.addEventListener('beforeprint', buildPrint);
+
+/* Panel library dialog */
+let dlgEdit = null, resMode = 'px';
+function setResMode(m){ resMode = m; for (const b of $$('[data-resmode]')) b.setAttribute('aria-pressed', b.dataset.resmode === m); $('#dlgPx').hidden = m !== 'px'; $('#dlgPitch').hidden = m !== 'pitch'; }
+function openPanelDlg(src, editId){
+  dlgEdit = editId || null;
+  const f = $('#panelForm');
+  f.name.value = src.name || ''; f.w.value = src.w ?? ''; f.h.value = src.h ?? ''; f.px.value = src.px ?? ''; f.py.value = src.py ?? '';
+  f.pitch.value = src.px ? +(src.w / src.px).toFixed(3) : ''; f.maxW.value = src.maxW ?? ''; f.typW.value = src.typW ?? ''; f.kg.value = src.kg ?? '';
+  f.v120.checked = src.v120 !== false; f.v208.checked = src.v208 !== false;
+  $('#panelDlgTitle').textContent = editId ? 'Edit panel' : 'Add panel to library';
+  $('#dlgOk').textContent = editId ? 'Save panel' : 'Add to library';
+  $('#dlgMsg').textContent = '';
+  setResMode('px');
+  $('#panelDlg').showModal();
+}
+for (const b of $$('[data-resmode]')) b.addEventListener('click', () => setResMode(b.dataset.resmode));
+$('#dlgCancel').addEventListener('click', () => $('#panelDlg').close());
+$('#panelForm').addEventListener('submit', e => {
+  const f = e.target, w = pos(f.w.value), h = pos(f.h.value);
+  let px = Math.round(pos(f.px.value)), py = Math.round(pos(f.py.value));
+  if (resMode === 'pitch'){ const p = pos(f.pitch.value); px = p ? Math.round(w / p) : 0; py = p ? Math.round(h / p) : 0; }
+  if (!w || !h || !px || !py || !pos(f.maxW.value)){ e.preventDefault(); $('#dlgMsg').textContent = 'Enter the cabinet size, its pixels (or pixel pitch) and max watts.'; return; }
+  const p = {id: dlgEdit || 'lib-' + Date.now().toString(36), name: f.name.value.trim() || 'My panel', w, h, px, py,
+    kg: pos(f.kg.value), maxW: pos(f.maxW.value), typW: pos(f.typW.value), v120: f.v120.checked, v208: f.v208.checked};
+  const i = LIB.findIndex(q => q.id === p.id);
+  if (i >= 0) LIB[i] = p; else LIB.push(p);
+  S.panelId = p.id;
+  fillPanelSelect(); render(); if ($('#libDlg').open) libList();
+});
+$('#btnAddCustom').addEventListener('click', () => openPanelDlg(S.custom));
+function libList(){
+  $('#libList').innerHTML = allPanels().map(p => `<div class="lib-item"><span><b>${esc(p.name)}</b> · ${p.w}×${p.h} mm · ${p.px}×${p.py} px · ${p.maxW} W</span>${LIB.includes(p)
+    ? `<span><button type="button" class="btn sm" data-ed="${p.id}">Edit</button> <button type="button" class="btn sm danger" data-del="${p.id}">Delete</button></span>` : '<span class="hint">Built in</span>'}</div>`).join('');
+}
+$('#btnLib').addEventListener('click', () => { libList(); $('#libDlg').showModal(); });
+$('#libClose').addEventListener('click', () => $('#libDlg').close());
+$('#libNew').addEventListener('click', () => openPanelDlg(CUSTOM_PANEL));
+$('#libList').addEventListener('click', e => {
+  const ed = e.target.closest('[data-ed]'), del = e.target.closest('[data-del]');
+  if (ed) openPanelDlg(LIB.find(p => p.id === ed.dataset.ed), ed.dataset.ed);
+  if (del && confirm('Delete this panel from your library?')){
+    LIB = LIB.filter(p => p.id !== del.dataset.del);
+    if (S.panelId === del.dataset.del) S.panelId = PANEL_PRESETS[0].id;
+    fillPanelSelect(); libList(); render();
+  }
+});
+
+/* Circled "i" tips: hover, focus or tap to read. */
+const tip = $('#tipPop');
+function showTip(b){ tip.textContent = b.dataset.tip; tip.hidden = false; const r = b.getBoundingClientRect(), t = tip.getBoundingClientRect();
+  tip.style.left = Math.max(12, Math.min(innerWidth - t.width - 12, r.left + r.width / 2 - t.width / 2)) + 'px';
+  tip.style.top = (r.bottom + 8 + t.height > innerHeight ? r.top - t.height - 8 : r.bottom + 8) + 'px'; }
+document.addEventListener('pointerover', e => { const b = e.target.closest('.info'); if (b) showTip(b); });
+document.addEventListener('pointerout', e => { if (e.target.closest('.info')) tip.hidden = true; });
+document.addEventListener('focusin', e => { const b = e.target.closest('.info'); if (b) showTip(b); });
+document.addEventListener('focusout', () => { tip.hidden = true; });
+
+syncInputs();
+render();
+</script>
+</body>
+</html>
