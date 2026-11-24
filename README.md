@@ -47,6 +47,11 @@ Wiring starts **hand drawn**: the wall starts unwired and you draw each data run
 - Dots mark where data enters, arrows show its direction, and squares mark where power enters. Hover over a cabinet to see its run and circuit.
 - Cabinet numbers are column, row, counted from the front-left.
 
+### Zoom
+- Zoom with the **scroll wheel**, a **trackpad pinch**, **two fingers** on a touch screen, the **+ / −** buttons above the diagram, or the **+** and **−** keys. The zoom stays centered on the pointer.
+- Move around a zoomed diagram with the **Pan** tool, the **middle mouse button**, or by holding the **space bar** while you drag. When wiring is Automatic, a plain drag pans.
+- **Fit** (or the **0** key) shows the whole wall again. You can keep drawing while zoomed in.
+
 ### Output
 - Tiles across the top: processors, XD boxes, 1G home runs, circuits, max amps and resolution.
 - Tabs: **Gear list**, **Signal chain** (processor → XD → ports), **Port schedule** and **Circuit schedule**.

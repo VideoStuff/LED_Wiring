@@ -13,7 +13,7 @@
 :root{
   --bg:#ECEFF3; --panel:#FFFFFF; --ink:#141920; --muted:#5A6473; --line:#D3D9E1; --field:#F6F8FA;
   --accent:#0A6C97; --accent-ink:#FFFFFF; --accent-soft:#DCEEF6; --danger:#B3261E; --warn:#B45309;
-  --stage:#161A20; --stage-grid:#232932; --stage-ink:#EEF1F5; --stage-muted:#8E98A6; --cab:#2A313B; --cab-line:#7C8796;
+  --stage:#08090B; --stage-grid:#232932; --stage-ink:#EEF1F5; --stage-muted:#8E98A6; --cab:#3D4755; --cab-line:#AEB9C7; --cabnum:#C3CBD6;
   --f-display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
@@ -22,11 +22,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0E1115; --panel:#161A20; --ink:#E5E9EE; --muted:#8C96A4; --line:#29303A; --field:#1C2128;
   --accent:#4DB8E4; --accent-ink:#06222F; --accent-soft:#163242; --danger:#F2867E; --warn:#F5B454;
-  --stage:#050607; --stage-grid:#181D24; --cab:#232A33; --cab-line:#6F7A89; color-scheme:dark}}
+  --stage:#000000; --stage-grid:#181D24; --cab:#38424F; --cab-line:#A3AFBE; --cabnum:#BCC5D0; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E1115; --panel:#161A20; --ink:#E5E9EE; --muted:#8C96A4; --line:#29303A; --field:#1C2128;
   --accent:#4DB8E4; --accent-ink:#06222F; --accent-soft:#163242; --danger:#F2867E; --warn:#F5B454;
-  --stage:#050607; --stage-grid:#181D24; --cab:#232A33; --cab-line:#6F7A89; color-scheme:dark}
+  --stage:#000000; --stage-grid:#181D24; --cab:#38424F; --cab-line:#A3AFBE; --cabnum:#BCC5D0; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -121,6 +121,11 @@ label.f,div.f{display:flex;flex-direction:column;gap:3px;font-size:11px;font-wei
 .stage-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
 .stage{background:var(--stage);min-height:380px;height:58vh;padding:8px;display:flex;position:relative;user-select:none;-webkit-user-select:none}
 .stage.drawing{cursor:crosshair;touch-action:none}
+.stage.panmode{cursor:grab;touch-action:none}
+.stage.panning,.stage.panning *{cursor:grabbing!important}
+.zoom{display:inline-flex;align-items:center;gap:8px;margin-left:auto}
+.zoom .seg button{min-width:34px}
+#zPct{font-size:12px;color:var(--muted);min-width:42px;text-align:right}
 .stage.erasing{cursor:not-allowed;touch-action:none}
 .tools{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--field)}
 .tools .lbl{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
@@ -135,7 +140,7 @@ label.f,div.f{display:flex;flex-direction:column;gap:3px;font-size:11px;font-wei
 .w-bg{fill:var(--stage)}
 .cab{fill:var(--cab);stroke:var(--cab-line)}
 .unwired{fill:none;stroke:var(--warn);stroke-opacity:.7}
-.cabnum{fill:var(--stage-muted);font-family:var(--f-mono)}
+.cabnum{fill:var(--cabnum);font-family:var(--f-mono)}
 .axis{fill:var(--stage-muted);font-family:var(--f-mono)}
 .viewtag{fill:var(--stage-muted);font-family:var(--f-display);font-weight:600;letter-spacing:.12em}
 .pill-t{font-family:var(--f-mono);font-weight:700;fill:#0B0E12}
@@ -181,7 +186,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
   /* The print page is light whatever the screen theme, so it reads on paper and in PDF viewers. */
   :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
     --bg:#fff; --panel:#fff; --ink:#000; --muted:#444; --line:#bbb; --field:#f3f3f3;
-    --stage:#ffffff; --stage-ink:#000; --stage-muted:#555; --cab:#eef0f3; --cab-line:#5f6670; color-scheme:light}
+    --stage:#ffffff; --stage-ink:#000; --stage-muted:#555; --cab:#eef0f3; --cab-line:#5f6670; --cabnum:#555; color-scheme:light}
   @page{size:landscape;margin:10mm}
   body{padding:0;height:auto!important;overflow:visible!important;display:block!important;font-size:11px;background:#fff}
   header.top,main.work,dialog,#tipPop{display:none!important}
@@ -318,12 +323,13 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
         <div class="seg" role="group" aria-label="Layers"><button type="button" data-k="layer" data-v="data">Data only</button><button type="button" data-k="layer" data-v="power">Power only</button><button type="button" data-k="layer" data-v="combined">Combined</button></div>
         <label class="switch"><input type="checkbox" data-k="labels"> Labels / port load</label>
         <div class="seg" role="group" aria-label="View"><button type="button" data-k="view" data-v="rear">Rear view</button><button type="button" data-k="view" data-v="front">Front view</button></div>
+        <div class="zoom"><span id="zPct" class="mono">100%</span><div class="seg" role="group" aria-label="Zoom"><button type="button" id="zOut" title="Zoom out (−)" aria-label="Zoom out">−</button><button type="button" id="zFit" title="Fit the wall (0)">Fit</button><button type="button" id="zIn" title="Zoom in (+)" aria-label="Zoom in">+</button></div><button type="button" class="info" data-tip="Zoom with the scroll wheel, a trackpad pinch, two fingers on a touch screen, the + and − buttons or the + and − keys. Move around a zoomed diagram by dragging with the Pan tool, the middle mouse button, or while holding the space bar. Fit (or the 0 key) shows the whole wall." aria-label="About zoom">i</button></div>
       </div>
       <div class="tools">
         <span class="lbl">Wire</span>
         <div class="seg" role="group" aria-label="Layer to wire"><button type="button" data-k="drawLayer" data-v="data">Data</button><button type="button" data-k="drawLayer" data-v="power">Power</button></div>
         <div class="seg" role="group" aria-label="Wiring mode" id="modeSeg"><button type="button" data-k="dataMode" data-v="manual">Hand drawn</button><button type="button" data-k="dataMode" data-v="auto">Automatic</button></div>
-        <div class="seg" role="group" aria-label="Tool" id="toolSeg"><button type="button" data-k="tool" data-v="draw">Draw</button><button type="button" data-k="tool" data-v="erase">Erase</button></div>
+        <div class="seg" role="group" aria-label="Tool" id="toolSeg"><button type="button" data-k="tool" data-v="draw">Draw</button><button type="button" data-k="tool" data-v="erase">Erase</button><button type="button" data-k="tool" data-v="pan">Pan</button></div>
         <button type="button" class="btn" id="btnAuto" title="Wire this layer with the automatic pattern from the sidebar, then edit it by hand">Auto-wire</button>
         <button type="button" class="btn" id="btnUndo" title="Undo (Ctrl+Z)">Undo</button>
         <button type="button" class="btn danger" id="btnClear">Clear</button>
@@ -375,7 +381,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 
 <script>
 'use strict';
-const APP_VERSION = '1.01';
+const APP_VERSION = '1.02';
 
 /* =====================================================================
    1. LIBRARY DATA
@@ -640,7 +646,7 @@ function wallSvg(R, o){
   R.runs.forEach(r => r.cells.forEach((c, k) => runOf[c.c + ',' + c.r] = {r, k}));
   R.circuits.forEach(p => p.cells.forEach((c, k) => circOf[c.c + ',' + c.r] = {p, k}));
   const fs = u * 0.13;
-  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-m} ${-m} ${W + 2 * m} ${H + 2 * m}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${o.view === 'rear' ? 'Rear' : 'Front'} view wiring diagram, ${cols} by ${rows} cabinets">`;
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-m} ${-m} ${W + 2 * m} ${H + 2 * m}" data-full="${-m} ${-m} ${W + 2 * m} ${H + 2 * m}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${o.view === 'rear' ? 'Rear' : 'Front'} view wiring diagram, ${cols} by ${rows} cabinets">`;
   s += `<rect class="w-bg" x="${-m}" y="${-m}" width="${W + 2 * m}" height="${H + 2 * m}"/>`;
   // Cabinets, tinted by run or circuit when one layer is shown on its own.
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++){
@@ -830,9 +836,11 @@ function render(){
   const man = isManual();
   $('#toolSeg').hidden = $('#btnClear').hidden = !man;
   $('#btnUndo').disabled = !undoStack.length;
-  $('#stage').className = 'stage' + (man ? (S.tool === 'erase' ? ' erasing' : ' drawing') : '');
+  const panTool = !man || S.tool === 'pan' || spaceDown;
+  $('#stage').className = 'stage' + (panTool ? ' panmode' : S.tool === 'erase' ? ' erasing' : ' drawing') + (pan ? ' panning' : '');
   $('#drawHint').textContent = !man ? `${S.drawLayer === 'power' ? 'Power' : 'Data'} is wired automatically from the sidebar pattern. Choose Hand drawn to draw it yourself.`
     : S.tool === 'erase' ? 'Drag across cabinets to take them off their chain.'
+    : S.tool === 'pan' ? 'Drag to move around the diagram. Scroll or pinch to zoom.'
     : `Drag across cabinets to chain them${S.drawLayer === 'power' ? ' onto a circuit' : ' onto a port'}. Start on the end of a chain to keep going, or on any wired cabinet to re-route from there.`;
   for (const b of $$('#themeSeg button')) b.setAttribute('aria-pressed', b.dataset.themeV === S.theme);
   for (const b of $$('.tabs button')) b.setAttribute('aria-selected', b.dataset.tab === S.tab);
@@ -883,6 +891,7 @@ function render(){
   $('#warns').innerHTML = R.warns.map(x => `<div class="warn${x.err ? ' err' : ''}">${esc(x.t)}</div>`).join('');
 
   $('#stage').innerHTML = wallSvg(R, {layer: S.layer, labels: S.labels, view: S.view, unwired: man ? S.drawLayer : ''}) + (toastMsg ? `<div id="toast">${esc(toastMsg)}</div>` : '');
+  applyZoom();
   $('#legend').innerHTML = legendHtml();
   $('#tabBody').innerHTML = S.tab === 'chain' ? chainHtml(R) : S.tab === 'data' ? dataHtml(R) : S.tab === 'power' ? powerHtml(R) : gearHtml(R);
   save();
@@ -1100,7 +1109,18 @@ function applyCell(cell){
 }
 const stage = $('#stage');
 stage.addEventListener('pointerdown', ev => {
-  if (ev.button !== 0 || !isManual()) return;
+  ptrs.set(ev.pointerId, {x: ev.clientX, y: ev.clientY});
+  // A second finger turns the gesture into pinch-zoom; any cabinets the first finger just added are put back.
+  if (ptrs.size === 2){
+    if (drag){ const snap = undoStack.pop(); if (drag.changed && snap) S.manual = JSON.parse(snap); drag = null; }
+    pan = null; pinch = pinchInfo(); stage.setPointerCapture(ev.pointerId); render(); return;
+  }
+  if (ptrs.size > 2) return;
+  if (ev.button === 1 || (ev.button === 0 && (spaceDown || !isManual() || S.tool === 'pan'))){
+    ev.preventDefault(); stage.setPointerCapture(ev.pointerId);
+    pan = {x: ev.clientX, y: ev.clientY}; render(); return;
+  }
+  if (ev.button !== 0) return;
   const pt = svgPt(ev), cell = cellAt(pt);
   if (!cell) return;
   ev.preventDefault();
@@ -1112,6 +1132,14 @@ stage.addEventListener('pointerdown', ev => {
   render();
 });
 stage.addEventListener('pointermove', ev => {
+  if (ptrs.has(ev.pointerId)) ptrs.set(ev.pointerId, {x: ev.clientX, y: ev.clientY});
+  if (pinch){
+    const now = pinchInfo();
+    if (now && pinch.d > 0){ panBy(now.x - pinch.x, now.y - pinch.y); zoomAt(now.x, now.y, zv.z * now.d / pinch.d); }
+    if (now) pinch = now;
+    return;
+  }
+  if (pan){ panBy(ev.clientX - pan.x, ev.clientY - pan.y); pan = {x: ev.clientX, y: ev.clientY}; return; }
   if (!drag) return;
   const pt = svgPt(ev);
   if (!pt) return;
@@ -1126,7 +1154,14 @@ stage.addEventListener('pointermove', ev => {
   drag.pt = pt;
   if (changed){ drag.changed = true; render(); }
 });
-const endDrag = () => { if (!drag) return; if (!drag.changed) undoStack.pop(); drag = null; render(); };
+const endDrag = ev => {
+  ptrs.delete(ev.pointerId);
+  if (pinch){ if (ptrs.size < 2) pinch = null; return; }
+  if (pan){ pan = null; render(); return; }
+  if (!drag) return;
+  if (!drag.changed) undoStack.pop();
+  drag = null; render();
+};
 stage.addEventListener('pointerup', endDrag);
 stage.addEventListener('pointercancel', endDrag);
 $('#btnUndo').addEventListener('click', undo);
@@ -1153,6 +1188,71 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
   if (e.target.closest('[data-k="drawLayer"]') && S.layer !== 'combined' && S.layer !== S.drawLayer){ S.layer = S.drawLayer; render(); }
 });
+
+/* =====================================================================
+   10. ZOOM AND PAN
+   The diagram is drawn at full size; zooming only changes which part of it the SVG shows (its viewBox).
+   zv.z is the zoom (1 = whole wall fits), zv.cx / zv.cy the middle of the view in millimeters.
+   ===================================================================== */
+const zv = {z: 1, cx: null, cy: null};
+const ptrs = new Map();
+let pan = null, pinch = null, spaceDown = false;
+function applyZoom(){
+  const svg = $('#stage svg');
+  if (!svg) return;
+  const [x, y, w, h] = svg.dataset.full.split(' ').map(Number);
+  zv.z = Math.min(20, Math.max(1, zv.z || 1));
+  const vw = w / zv.z, vh = h / zv.z;
+  if (zv.cx == null || zv.z === 1){ zv.cx = x + w / 2; zv.cy = y + h / 2; }
+  // Keep at least part of the wall in view.
+  zv.cx = Math.min(x + w - vw / 2, Math.max(x + vw / 2, zv.cx));
+  zv.cy = Math.min(y + h - vh / 2, Math.max(y + vh / 2, zv.cy));
+  svg.setAttribute('viewBox', `${zv.cx - vw / 2} ${zv.cy - vh / 2} ${vw} ${vh}`);
+  $('#zPct').textContent = Math.round(zv.z * 100) + '%';
+}
+// Zoom so the point under the pointer (screen x, y) stays where it is.
+function zoomAt(sx, sy, z){
+  const svg = $('#stage svg'), m = svg && svg.getScreenCTM();
+  if (!m) return;
+  const p = new DOMPoint(sx, sy).matrixTransform(m.inverse());
+  const old = zv.z, nz = Math.min(20, Math.max(1, z));
+  zv.cx = p.x - (p.x - zv.cx) * old / nz;
+  zv.cy = p.y - (p.y - zv.cy) * old / nz;
+  zv.z = nz; applyZoom();
+}
+function zoomCenter(f){ const r = stage.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, zv.z * f); }
+function panBy(dx, dy){
+  const svg = $('#stage svg'), m = svg && svg.getScreenCTM();
+  if (!m) return;
+  zv.cx -= dx / m.a; zv.cy -= dy / m.d; applyZoom();
+}
+function pinchInfo(){
+  const [a, b] = [...ptrs.values()];
+  return a && b ? {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y)} : null;
+}
+stage.addEventListener('wheel', e => {
+  e.preventDefault();
+  // Trackpad pinches arrive as small steps with Ctrl held; mouse wheels as bigger steps.
+  const k = e.ctrlKey ? 0.01 : 0.0015, d = e.deltaMode === 1 ? e.deltaY * 30 : e.deltaY;
+  zoomAt(e.clientX, e.clientY, zv.z * Math.exp(-d * k));
+}, {passive: false});
+$('#zIn').addEventListener('click', () => zoomCenter(1.25));
+$('#zOut').addEventListener('click', () => zoomCenter(0.8));
+$('#zFit').addEventListener('click', () => { zv.z = 1; applyZoom(); });
+const typing = e => e.target.closest && e.target.closest('input,select,textarea');
+document.addEventListener('keydown', e => {
+  if (typing(e) || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return;
+  if (e.key === '+' || e.key === '='){ zoomCenter(1.25); e.preventDefault(); }
+  else if (e.key === '-' || e.key === '_'){ zoomCenter(0.8); e.preventDefault(); }
+  else if (e.key === '0'){ zv.z = 1; applyZoom(); e.preventDefault(); }
+  else if (e.key === ' ' && (overStage || !e.target.closest('button'))){ e.preventDefault(); if (spaceDown) return; spaceDown = true; e.preventDefault(); render(); }
+});
+// While the pointer is over the diagram, the space bar is for panning, not for pressing the last-clicked button.
+document.addEventListener('keyup', e => { if (e.key === ' ' && spaceDown){ e.preventDefault(); spaceDown = false; render(); } });
+let overStage = false;
+stage.addEventListener('pointerenter', () => { overStage = true; });
+stage.addEventListener('pointerleave', () => { overStage = false; });
+window.addEventListener('blur', () => { if (spaceDown){ spaceDown = false; render(); } });
 
 syncInputs();
 render();
