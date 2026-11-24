@@ -34,8 +34,8 @@ Wiring starts **hand drawn**: the wall starts unwired and you draw each data run
 ### Data wiring
 - Automatic patterns (also used by **Auto-wire**), seen from the rear: **Horizontal snake**, **Vertical snake**, **Top-down**, **Bottom-up**, starting at the rear left or rear right.
 - Runs keep to whole rows or columns. Turn on **Fill each port** to pack as many cabinets as fit on each port instead.
-- **Data redundancy** adds a backup return line from the last cabinet of each run to the same port number on the backup XD (drawn dashed).
-- Each run is labeled `D1`, `D2`… with its port load.
+- **Data redundancy** adds a backup cable into the last cabinet of each run, from the same port number on the backup XD.
+- On the diagram each run is labeled with its cable name and port load (`1A-3 · 98%`); the tables also list its run number (`D1`, `D2`…).
 
 ### Power
 - **120 V**, **208 V 1-phase** or **208 V 3-phase**, breaker size (default 20 A), safety factor (default 80%) and power factor (default 1.0).
@@ -48,10 +48,12 @@ Wiring starts **hand drawn**: the wall starts unwired and you draw each data run
 - Cabinet numbers are column, row, counted from the front-left.
 
 ### Processors and XDs on the diagram
-- With **Processors & XDs** on (above the diagram), the gear is drawn under the wall: each SX40 at the bottom, **10G fiber** (yellow) up to its XDs, and a **Cat6 home run** from every XD port to the cabinet where its run starts. Each home run has its own lane in the cable channel under the wall, then goes up the column to its cabinet.
-- XDs are lettered **A, B, C, D** after the SX40 output that feeds them, as Brompton does. With **data redundancy**, A is main and B its backup, C main and D its backup. A run leaves on a main XD port, and its backup return line (dashed) comes back from the last cabinet to the **same port number on the backup XD**: D1 on A-1, its backup on B-1.
+- With **Processors & XDs** on (above the diagram), the gear is drawn under the wall: each SX40 at the bottom, **10G fiber** (yellow) up to its XDs, and a **Cat6 home run** from every XD port to the cabinet it plugs into.
+- Each XD sits **under the part of the wall it feeds**, and each SX40 under its XDs. Ports are given out across the wall from the rear left, so port 1 feeds the left-most run, and home runs fan out to their cabinets with as few crossings as possible.
+- **One color per XD box**: its outline, its ports, its cables and the runs it feeds on the wall all share that color.
+- XDs are lettered **A, B, C, D** after the SX40 output that feeds them, as Brompton does. With **data redundancy**, A is main and B its backup, C main and D its backup. The backup cable (dashed) plugs into the **last cabinet** of the run (marked with a ring) and comes from the **same port number on the backup XD**.
+- **Cable names** are processor number, XD letter and port number: `1A-3` is SX40 #1, XD A, port 3, and its backup is `1B-3`. The label sits on the cabinet each cable plugs into, with the port load (`1A-3 · 98%`). The port schedule and signal chain use the same names.
 - With **Full redundancy**, the backup SX40 is drawn beside the main one, with dashed fiber into each XD's second input.
-- Ports show the run plugged into them, and run labels on the wall show their port (for example `D3 · A3 · 98%`). With more than one SX40, ports are prefixed with the processor number (`#2 XD C-4`).
 - The gear also prints on the data wiring page of the PDF.
 
 ### Zoom
