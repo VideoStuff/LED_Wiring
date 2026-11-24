@@ -22,15 +22,24 @@ It is a single web page (`index.html`). Nothing to install: open it in a current
 - Shows each processor's load, for example *1× SX40 — 46% Pixel Load | 8/40 Ports Used*.
 - **Custom processor…** for anything else: pixel limit, pixels per 1G port, and either XD boxes or direct 1G ports.
 
+### Drawing your own wiring
+Wiring starts **hand drawn**: the wall starts unwired and you draw each data run and power circuit yourself.
+- In the **Wire** bar above the diagram, choose **Data** or **Power**, then press on a cabinet and drag across the cabinets in the order the cable goes. Each drag makes a new run (`D1`, `D2`…) or circuit (`P1`, `P2`…).
+- Press on the **last cabinet** of a chain to keep going from it. Press on any other wired cabinet and drag to **re-route** the chain from there. Drag back one cabinet to take it off again.
+- A chain stops growing when its port or circuit is full, and a message says so.
+- **Erase** takes cabinets off their chain (the chain splits around them). **Undo** (or Ctrl+Z / Cmd+Z) steps back. **Clear** removes every chain on that layer.
+- **Auto-wire** wires the layer for you with the pattern from the sidebar, which you can then edit by hand. Choose **Automatic** instead to let the pattern wire it and keep it up to date as you change the wall.
+- Cabinets that aren't wired yet have a dashed amber outline. The warnings above the diagram list cabinets with no data or power, and any run or circuit that is over its limit.
+
 ### Data wiring
-- Patterns, seen from the rear: **Horizontal snake**, **Vertical snake**, **Top-down**, **Bottom-up**, starting at the rear left or rear right.
+- Automatic patterns (also used by **Auto-wire**), seen from the rear: **Horizontal snake**, **Vertical snake**, **Top-down**, **Bottom-up**, starting at the rear left or rear right.
 - Runs keep to whole rows or columns. Turn on **Fill each port** to pack as many cabinets as fit on each port instead.
 - **Data redundancy** adds a backup return line from the last cabinet of each run to its own port (drawn dashed).
 - Each run is labeled `D1`, `D2`… with its port load.
 
 ### Power
 - **120 V**, **208 V 1-phase** or **208 V 3-phase**, breaker size (default 20 A), safety factor (default 80%) and power factor (default 1.0).
-- Circuits are sized on **max** watts so a full-white frame can't trip a breaker. Each circuit is labeled `P1`, `P2`… with its amps, and is given a leg (L1, L2, L3 or a pair for 208 V).
+- **Hand drawn** or **Automatic** (same pattern choices as data). Circuits are sized on **max** watts so a full-white frame can't trip a breaker. Each circuit is labeled `P1`, `P2`… with its amps, and is given a leg (L1, L2, L3 or a pair for 208 V).
 - Shows total watts and amps at max and typical load, the load on each leg, and distro drops (default 6 circuits each, for Socapex).
 
 ### Diagram

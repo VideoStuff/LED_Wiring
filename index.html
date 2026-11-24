@@ -13,7 +13,7 @@
 :root{
   --bg:#ECEFF3; --panel:#FFFFFF; --ink:#141920; --muted:#5A6473; --line:#D3D9E1; --field:#F6F8FA;
   --accent:#0A6C97; --accent-ink:#FFFFFF; --accent-soft:#DCEEF6; --danger:#B3261E; --warn:#B45309;
-  --stage:#161A20; --stage-grid:#232932; --stage-ink:#EEF1F5; --stage-muted:#8E98A6; --cab:#1F252D; --cab-line:#3A4350;
+  --stage:#161A20; --stage-grid:#232932; --stage-ink:#EEF1F5; --stage-muted:#8E98A6; --cab:#2A313B; --cab-line:#7C8796;
   --f-display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
@@ -22,11 +22,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0E1115; --panel:#161A20; --ink:#E5E9EE; --muted:#8C96A4; --line:#29303A; --field:#1C2128;
   --accent:#4DB8E4; --accent-ink:#06222F; --accent-soft:#163242; --danger:#F2867E; --warn:#F5B454;
-  --stage:#0A0C0F; --stage-grid:#181D24; --cab:#161B21; --cab-line:#2E3640; color-scheme:dark}}
+  --stage:#050607; --stage-grid:#181D24; --cab:#232A33; --cab-line:#6F7A89; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E1115; --panel:#161A20; --ink:#E5E9EE; --muted:#8C96A4; --line:#29303A; --field:#1C2128;
   --accent:#4DB8E4; --accent-ink:#06222F; --accent-soft:#163242; --danger:#F2867E; --warn:#F5B454;
-  --stage:#0A0C0F; --stage-grid:#181D24; --cab:#161B21; --cab-line:#2E3640; color-scheme:dark}
+  --stage:#050607; --stage-grid:#181D24; --cab:#232A33; --cab-line:#6F7A89; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -119,7 +119,13 @@ label.f,div.f{display:flex;flex-direction:column;gap:3px;font-size:11px;font-wei
 /* The dark stage that holds the wiring diagram */
 .stage-panel{padding:0;overflow:hidden;display:flex;flex-direction:column}
 .stage-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
-.stage{background:var(--stage);min-height:380px;height:58vh;padding:8px;display:flex}
+.stage{background:var(--stage);min-height:380px;height:58vh;padding:8px;display:flex;position:relative;user-select:none;-webkit-user-select:none}
+.stage.drawing{cursor:crosshair;touch-action:none}
+.stage.erasing{cursor:not-allowed;touch-action:none}
+.tools{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--field)}
+.tools .lbl{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tools .hint{flex:1 1 220px}
+#toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--ink);color:var(--bg);font:600 13px var(--f-body);padding:7px 12px;border-radius:7px;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 .stage svg{width:100%;height:100%;display:block}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
@@ -128,6 +134,7 @@ label.f,div.f{display:flex;flex-direction:column;gap:3px;font-size:11px;font-wei
 /* Diagram drawing classes (also used on the print page) */
 .w-bg{fill:var(--stage)}
 .cab{fill:var(--cab);stroke:var(--cab-line)}
+.unwired{fill:none;stroke:var(--warn);stroke-opacity:.7}
 .cabnum{fill:var(--stage-muted);font-family:var(--f-mono)}
 .axis{fill:var(--stage-muted);font-family:var(--f-mono)}
 .viewtag{fill:var(--stage-muted);font-family:var(--f-display);font-weight:600;letter-spacing:.12em}
@@ -174,7 +181,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
   /* The print page is light whatever the screen theme, so it reads on paper and in PDF viewers. */
   :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
     --bg:#fff; --panel:#fff; --ink:#000; --muted:#444; --line:#bbb; --field:#f3f3f3;
-    --stage:#ffffff; --stage-ink:#000; --stage-muted:#555; --cab:#f4f5f7; --cab-line:#9aa0a8; color-scheme:light}
+    --stage:#ffffff; --stage-ink:#000; --stage-muted:#555; --cab:#eef0f3; --cab-line:#5f6670; color-scheme:light}
   @page{size:landscape;margin:10mm}
   body{padding:0;height:auto!important;overflow:visible!important;display:block!important;font-size:11px;background:#fff}
   header.top,main.work,dialog,#tipPop{display:none!important}
@@ -268,10 +275,11 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
     </section>
 
     <section class="panel">
-      <div class="panel-head"><h2>Data wiring<button type="button" class="info" data-tip="How cabinets are daisy-chained on each 1G port, seen from behind the wall. Snakes zig-zag continuously. Top-down and bottom-up start every run at the top or bottom edge. By default runs keep to whole rows or columns; Fill each port packs as many cabinets as fit." aria-label="About data wiring">i</button></h2></div>
+      <div class="panel-head"><h2>Data wiring<button type="button" class="info" data-tip="Hand drawn: drag across cabinets on the diagram to chain them onto a port. Automatic: the pattern below wires the wall for you. The pattern is also what Auto-wire uses. Seen from behind the wall: snakes zig-zag continuously. Top-down and bottom-up start every run at the top or bottom edge. By default runs keep to whole rows or columns; Fill each port packs as many cabinets as fit." aria-label="About data wiring">i</button></h2></div>
       <div class="stack">
+        <div class="seg full" role="group" aria-label="Data wiring mode"><button type="button" data-k="dataMode" data-v="manual">Hand drawn</button><button type="button" data-k="dataMode" data-v="auto">Automatic</button></div>
         <div class="row r2">
-          <label class="f">Pattern<select data-k="dataPat"><option value="hsnake">Horizontal snake</option><option value="vsnake">Vertical snake</option><option value="topdown">Top-down</option><option value="bottomup">Bottom-up</option></select></label>
+          <label class="f">Auto pattern<select data-k="dataPat"><option value="hsnake">Horizontal snake</option><option value="vsnake">Vertical snake</option><option value="topdown">Top-down</option><option value="bottomup">Bottom-up</option></select></label>
           <label class="f">Start side (rear)<select data-k="dataStart"><option value="left">Rear left</option><option value="right">Rear right</option></select></label>
         </div>
         <label class="switch"><input type="checkbox" data-k="dataFill"> Fill each port (ignore row/column ends)</label>
@@ -285,9 +293,10 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
       <div class="panel-head"><h2>Power<button type="button" class="info" data-tip="Circuits are sized on max (full white) watts so a bright frame can't trip a breaker. Usable watts per circuit = breaker amps × safety factor × volts × power factor." aria-label="About power">i</button></h2></div>
       <div class="stack">
         <div class="seg full" role="group" aria-label="Voltage"><button type="button" data-k="volt" data-v="120">120 V</button><button type="button" data-k="volt" data-v="208-1">208 V 1-phase</button><button type="button" data-k="volt" data-v="208-3">208 V 3-phase</button></div>
+        <div class="seg full" role="group" aria-label="Power wiring mode"><button type="button" data-k="powMode" data-v="manual">Hand drawn</button><button type="button" data-k="powMode" data-v="auto">Automatic</button></div>
         <div class="row r3"><label class="f">Breaker (A)<input inputmode="decimal" data-k="breaker" data-num></label><label class="f">Safety %<input inputmode="decimal" data-k="safety" data-num></label><label class="f">Power factor<input inputmode="decimal" data-k="pf" data-num></label></div>
         <div class="row r2">
-          <label class="f">Pattern<select data-k="powPat"><option value="hsnake">Horizontal snake</option><option value="vsnake">Vertical snake</option><option value="topdown">Top-down</option><option value="bottomup">Bottom-up</option></select></label>
+          <label class="f">Auto pattern<select data-k="powPat"><option value="hsnake">Horizontal snake</option><option value="vsnake">Vertical snake</option><option value="topdown">Top-down</option><option value="bottomup">Bottom-up</option></select></label>
           <label class="f">Start side (rear)<select data-k="powStart"><option value="left">Rear left</option><option value="right">Rear right</option></select></label>
         </div>
         <label class="switch"><input type="checkbox" data-k="powFill"> Fill each circuit (ignore row/column ends)</label>
@@ -309,6 +318,16 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
         <div class="seg" role="group" aria-label="Layers"><button type="button" data-k="layer" data-v="data">Data only</button><button type="button" data-k="layer" data-v="power">Power only</button><button type="button" data-k="layer" data-v="combined">Combined</button></div>
         <label class="switch"><input type="checkbox" data-k="labels"> Labels / port load</label>
         <div class="seg" role="group" aria-label="View"><button type="button" data-k="view" data-v="rear">Rear view</button><button type="button" data-k="view" data-v="front">Front view</button></div>
+      </div>
+      <div class="tools">
+        <span class="lbl">Wire</span>
+        <div class="seg" role="group" aria-label="Layer to wire"><button type="button" data-k="drawLayer" data-v="data">Data</button><button type="button" data-k="drawLayer" data-v="power">Power</button></div>
+        <div class="seg" role="group" aria-label="Wiring mode" id="modeSeg"><button type="button" data-k="dataMode" data-v="manual">Hand drawn</button><button type="button" data-k="dataMode" data-v="auto">Automatic</button></div>
+        <div class="seg" role="group" aria-label="Tool" id="toolSeg"><button type="button" data-k="tool" data-v="draw">Draw</button><button type="button" data-k="tool" data-v="erase">Erase</button></div>
+        <button type="button" class="btn" id="btnAuto" title="Wire this layer with the automatic pattern from the sidebar, then edit it by hand">Auto-wire</button>
+        <button type="button" class="btn" id="btnUndo" title="Undo (Ctrl+Z)">Undo</button>
+        <button type="button" class="btn danger" id="btnClear">Clear</button>
+        <p class="hint" id="drawHint"></p>
       </div>
       <div class="stage" id="stage"></div>
       <div class="legend" id="legend"></div>
@@ -356,7 +375,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 
 <script>
 'use strict';
-const APP_VERSION = '1.00';
+const APP_VERSION = '1.01';
 
 /* =====================================================================
    1. LIBRARY DATA
@@ -390,12 +409,19 @@ const DEFAULTS = {
   dataPat:'hsnake', dataStart:'left', dataFill:false, dataRed:false, maxRun:'',
   volt:'208-3', breaker:20, safety:80, pf:1, powPat:'vsnake', powStart:'left', powFill:false, maxJump:'', perDrop:6,
   layer:'combined', labels:true, view:'rear', tab:'gear', theme:'auto',
+  // Wiring starts hand drawn. manual.data / manual.power are lists of chains, each a list of [column, row] (front-numbered, from 0).
+  dataMode:'manual', powMode:'manual', drawLayer:'data', tool:'draw', manual:{data:[], power:[]},
 };
 let S = load(STORE, {});
-S = {...DEFAULTS, ...S, custom:{...CUSTOM_PANEL, ...(S.custom || {})}, customProc:{...CUSTOM_PROC, ...(S.customProc || {})}};
+S = mergeState(S);
 let LIB = load(LIBSTORE, []);
 if (!Array.isArray(LIB)) LIB = [];
 
+function mergeState(o){
+  const m = o.manual || {};
+  return {...DEFAULTS, ...o, custom:{...CUSTOM_PANEL, ...(o.custom || {})}, customProc:{...CUSTOM_PROC, ...(o.customProc || {})},
+    manual:{data: Array.isArray(m.data) ? m.data : [], power: Array.isArray(m.power) ? m.power : []}};
+}
 function load(key, fb){ try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fb : v; } catch (e) { return fb; } }
 function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); localStorage.setItem(LIBSTORE, JSON.stringify(LIB)); } catch (e) {} }
 
@@ -479,7 +505,9 @@ function calc(){
   if (maxRun >= 1) cabPerPort = Math.min(cabPerPort, maxRun);
   if (pxCab <= 0) warns.push({err:true, t:'The panel needs a pixel resolution.'});
   else if (cabPerPort < 1) warns.push({err:true, t:`One cabinet (${fmt(pxCab)} px) is more than a 1G port carries at ${S.bits}-bit ${fps} Hz (${fmt(portCap)} px).`});
-  const runCells = buildChains(cols, rows, cabPerPort, S.dataPat, S.dataStart, S.dataFill);
+  pruneManual(cols, rows);
+  const toCells = chains => chains.map(ch => ch.map(([c, r]) => ({c, r})));
+  const runCells = S.dataMode === 'manual' ? toCells(S.manual.data) : buildChains(cols, rows, cabPerPort, S.dataPat, S.dataStart, S.dataFill);
   const runs = runCells.map((cells, i) => ({i, label:'D' + (i + 1), cells, px: cells.length * pxCab, load: portCap ? cells.length * pxCab / portCap : 0}));
 
   /* --- Processors and XD boxes ---
@@ -524,7 +552,7 @@ function calc(){
   if (S.volt === '120' && P.v120 === false) warns.push({err:true, t:`${P.name} is not listed as working on 120 V.`});
   if (S.volt !== '120' && P.v208 === false) warns.push({err:true, t:`${P.name} is not listed as working on 208 V.`});
   const PAIRS = S.volt === '208-3' ? ['L1-L2', 'L2-L3', 'L3-L1'] : S.volt === '208-1' ? ['L1-L2'] : ['L1', 'L2', 'L3'];
-  const circCells = buildChains(cols, rows, cabPerCirc, S.powPat, S.powStart, S.powFill);
+  const circCells = S.powMode === 'manual' ? toCells(S.manual.power) : buildChains(cols, rows, cabPerCirc, S.powPat, S.powStart, S.powFill);
   const circuits = circCells.map((cells, i) => {
     const w = cells.length * maxW, t = cells.length * typW;
     return {i, label:'P' + (i + 1), cells, maxW: w, typW: t, ampsMax: w / (V * pf), ampsTyp: t / (V * pf), phase: PAIRS[i % PAIRS.length], load: w / (V * pf) / breaker};
@@ -550,11 +578,37 @@ function calc(){
     '208-1': {max: W.max / (208 * pf), typ: W.typ / (208 * pf)},
     '208-3': {max: W.max / (208 * Math.sqrt(3) * pf), typ: W.typ / (208 * Math.sqrt(3) * pf)},
   };
+  // Hand-drawn wiring can leave cabinets out or overload a port or circuit: say so.
+  const over = runs.filter(r => r.load > 1), hot = circuits.filter(p => p.ampsMax > usableA + 1e-9);
+  if (over.length) warns.push({err:true, t:`Over port capacity: ${over.map(r => `${r.label} (${pct(r.load)})`).join(', ')}. Shorten ${over.length === 1 ? 'that run' : 'those runs'}.`});
+  if (hot.length) warns.push({err:true, t:`Over the ${Math.round(safety * 100)}% breaker limit: ${hot.map(p => `${p.label} (${fx(p.ampsMax)} A)`).join(', ')}.`});
+  const dataLeft = n - runs.reduce((s, r) => s + r.cells.length, 0), powLeft = n - circuits.reduce((s, p) => s + p.cells.length, 0);
+  if (dataLeft > 0) warns.push({t: runs.length ? `${dataLeft} cabinet${dataLeft === 1 ? ' has' : 's have'} no data yet.` : 'No data runs yet. Drag across cabinets on the diagram to draw them, or click Auto-wire.'});
+  if (powLeft > 0) warns.push({t: circuits.length ? `${powLeft} cabinet${powLeft === 1 ? ' has' : 's have'} no power yet.` : 'No power circuits yet. Choose Wire: Power and drag across cabinets, or click Auto-wire.'});
   const perDrop = Math.max(1, Math.floor(pos(S.perDrop, 6)));
   const drops = Math.ceil(circuits.length / perDrop);
 
   return {P, proc, pxCab, wall, portCap, cabPerPort, runs, procs, primProcs, totalProcs, xdTotal, portsUsed, portsPerProc, pixelCap, isXd, ppx,
     V, pf, breaker, safety, usableA, usableW, cabPerCirc, circuits, legs, W, amps, drops, perDrop, warns};
+}
+
+// Keep hand-drawn chains inside the wall when it shrinks, with each cabinet used once, and drop empty chains.
+// It edits the lists in place, because a drag in progress holds on to the chain it is adding to.
+function pruneManual(cols, rows){
+  for (const k of ['data', 'power']){
+    const seen = new Set(), list = S.manual[k];
+    for (const ch of list){
+      for (let i = ch.length - 1; i >= 0; i--){
+        const [c, r] = ch[i];
+        if (!(c >= 0 && r >= 0 && c < cols && r < rows)) ch.splice(i, 1);
+      }
+      for (let i = 0; i < ch.length; i++){
+        const key = ch[i][0] + ',' + ch[i][1];
+        if (seen.has(key)){ ch.splice(i, 1); i--; } else seen.add(key);
+      }
+    }
+    for (let i = list.length - 1; i >= 0; i--) if (!list[i].length) list.splice(i, 1);
+  }
 }
 
 /* =====================================================================
@@ -595,7 +649,9 @@ function wallSvg(R, o){
     if (o.layer === 'data' && d) fill = ` style="fill:${dataColor(d.r.i)};fill-opacity:.18"`;
     if (o.layer === 'power' && p) fill = ` style="fill:${powColor(p.p.i)};fill-opacity:.18"`;
     const tip = `Cabinet ${c + 1},${r + 1}` + (d ? ` · ${d.r.label} #${d.k + 1}` : '') + (p ? ` · ${p.p.label} #${p.k + 1}` : '');
-    s += `<rect class="cab" x="${X(c)}" y="${r * ch}" width="${cw}" height="${ch}" stroke-width="${u * 0.012}"${fill}><title>${tip}</title></rect>`;
+    const g = u * 0.014;
+    s += `<rect class="cab" x="${X(c) + g}" y="${r * ch + g}" width="${cw - 2 * g}" height="${ch - 2 * g}" stroke-width="${u * 0.014}"${fill}><title>${tip}</title></rect>`;
+    if (o.unwired && !(o.unwired === 'data' ? d : p)) s += `<rect class="unwired" x="${X(c) + u * 0.06}" y="${r * ch + u * 0.06}" width="${cw - u * 0.12}" height="${ch - u * 0.12}" stroke-width="${u * 0.012}" stroke-dasharray="${u * 0.04} ${u * 0.03}"/>`;
     if (o.labels) s += `<text class="cabnum" x="${X(c) + cw - u * 0.05}" y="${r * ch + ch - u * 0.05}" font-size="${fs * 0.8}" text-anchor="end">${c + 1},${r + 1}</text>`;
   }
   // Column numbers above, row numbers on the left (front numbering), and which side we're looking at.
@@ -661,6 +717,7 @@ function legendHtml(){
     if (S.dataRed) h += `<span>${sw('<line x1="2" y1="6" x2="32" y2="6" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/>')}Backup return line</span>`;
   }
   if (S.layer !== 'data') h += `<span>${sw('<line x1="4" y1="6" x2="30" y2="6" stroke="hsl(28 88% 54%)" stroke-width="5" stroke-linecap="round" opacity=".75"/><rect x="1" y="2" width="8" height="8" fill="hsl(28 88% 54%)"/>')}Power circuit (square = power in)</span>`;
+  if (isManual()) h += `<span>${sw('<rect x="2" y="1" width="30" height="10" fill="none" stroke="var(--warn)" stroke-dasharray="3 2"/>')}Not wired yet (${S.drawLayer})</span>`;
   h += `<span>Cabinet numbers count from the front-left: column, row.</span>`;
   return h;
 }
@@ -768,7 +825,15 @@ function render(){
   $('#cpDirect').hidden = S.customProc.mode === 'xd';
   $('#byCab').hidden = S.sizeMode !== 'cab';
   $('#bySize').hidden = S.sizeMode !== 'size';
+  for (const b of $$('#modeSeg button')) b.dataset.k = S.drawLayer === 'power' ? 'powMode' : 'dataMode';
   for (const b of $$('.seg button[data-k]')) b.setAttribute('aria-pressed', String(getK(b.dataset.k)) === b.dataset.v);
+  const man = isManual();
+  $('#toolSeg').hidden = $('#btnClear').hidden = !man;
+  $('#btnUndo').disabled = !undoStack.length;
+  $('#stage').className = 'stage' + (man ? (S.tool === 'erase' ? ' erasing' : ' drawing') : '');
+  $('#drawHint').textContent = !man ? `${S.drawLayer === 'power' ? 'Power' : 'Data'} is wired automatically from the sidebar pattern. Choose Hand drawn to draw it yourself.`
+    : S.tool === 'erase' ? 'Drag across cabinets to take them off their chain.'
+    : `Drag across cabinets to chain them${S.drawLayer === 'power' ? ' onto a circuit' : ' onto a port'}. Start on the end of a chain to keep going, or on any wired cabinet to re-route from there.`;
   for (const b of $$('#themeSeg button')) b.setAttribute('aria-pressed', b.dataset.themeV === S.theme);
   for (const b of $$('.tabs button')) b.setAttribute('aria-selected', b.dataset.tab === S.tab);
 
@@ -817,7 +882,7 @@ function render(){
   ].join('');
   $('#warns').innerHTML = R.warns.map(x => `<div class="warn${x.err ? ' err' : ''}">${esc(x.t)}</div>`).join('');
 
-  $('#stage').innerHTML = wallSvg(R, {layer: S.layer, labels: S.labels, view: S.view});
+  $('#stage').innerHTML = wallSvg(R, {layer: S.layer, labels: S.labels, view: S.view, unwired: man ? S.drawLayer : ''}) + (toastMsg ? `<div id="toast">${esc(toastMsg)}</div>` : '');
   $('#legend').innerHTML = legendHtml();
   $('#tabBody').innerHTML = S.tab === 'chain' ? chainHtml(R) : S.tab === 'data' ? dataHtml(R) : S.tab === 'power' ? powerHtml(R) : gearHtml(R);
   save();
@@ -898,7 +963,7 @@ $('#fileIn').addEventListener('change', async e => {
     if (d.format !== 'led-wiring-planner' || !d.state) throw new Error('not a wiring file');
     // Panels from the file join the library (matched by id), so a shared file brings its custom panels along.
     for (const p of d.library || []) if (p && p.id && !LIB.some(q => q.id === p.id) && !PANEL_PRESETS.some(q => q.id === p.id)) LIB.push(p);
-    S = {...DEFAULTS, ...d.state, custom: {...CUSTOM_PANEL, ...(d.state.custom || {})}, customProc: {...CUSTOM_PROC, ...(d.state.customProc || {})}};
+    S = mergeState(d.state); undoStack.length = 0;
     syncInputs(); render();
   } catch (err) { alert('That file could not be opened. Choose a .json saved from the LED Wiring Planner.'); }
 });
@@ -974,6 +1039,120 @@ document.addEventListener('pointerover', e => { const b = e.target.closest('.inf
 document.addEventListener('pointerout', e => { if (e.target.closest('.info')) tip.hidden = true; });
 document.addEventListener('focusin', e => { const b = e.target.closest('.info'); if (b) showTip(b); });
 document.addEventListener('focusout', () => { tip.hidden = true; });
+
+/* =====================================================================
+   9. HAND-DRAWN WIRING
+   Press on a cabinet and drag: each cabinet the pointer crosses joins the chain, in that order.
+   Pressing on the last cabinet of a chain carries on from it; pressing on any other wired cabinet re-routes
+   the chain from there (the cabinets after it come off once you move). Dragging back one cabinet takes it off again.
+   A chain stops growing when its port or circuit is full. Erase takes cabinets off and splits the chain around them.
+   ===================================================================== */
+const undoStack = [];
+let drag = null, toastMsg = '', toastTimer = 0;
+function isManual(){ return (S.drawLayer === 'power' ? S.powMode : S.dataMode) === 'manual'; }
+function pushUndo(){ undoStack.push(JSON.stringify(S.manual)); if (undoStack.length > 80) undoStack.shift(); }
+function undo(){ if (!undoStack.length) return; S.manual = JSON.parse(undoStack.pop()); render(); }
+function toast(t){ toastMsg = t; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastMsg = ''; const el = $('#toast'); if (el) el.remove(); }, 1800); }
+const chainsNow = () => S.manual[S.drawLayer === 'power' ? 'power' : 'data'];
+function findCell(chains, c, r){
+  for (let i = 0; i < chains.length; i++){ const k = chains[i].findIndex(([x, y]) => x === c && y === r); if (k >= 0) return {i, k}; }
+  return null;
+}
+function svgPt(ev){
+  const svg = $('#stage svg'), m = svg && svg.getScreenCTM();
+  return m ? new DOMPoint(ev.clientX, ev.clientY).matrixTransform(m.inverse()) : null;
+}
+function cellAt(pt){
+  if (!pt || !R) return null;
+  const cw = Math.max(1, pos(R.P.w, 500)), ch = Math.max(1, pos(R.P.h, 500)), {cols, rows} = R.wall;
+  const xi = Math.floor(pt.x / cw), r = Math.floor(pt.y / ch);
+  if (xi < 0 || r < 0 || xi >= cols || r >= rows) return null;
+  return {c: S.view === 'rear' ? cols - 1 - xi : xi, r};
+}
+function applyCell(cell){
+  const chains = chainsNow(), {c, r} = cell;
+  if (drag.lastCell && drag.lastCell.c === c && drag.lastCell.r === r) return false;
+  drag.lastCell = cell;
+  if (S.tool === 'erase'){
+    const f = findCell(chains, c, r);
+    if (!f) return false;
+    const chn = chains[f.i];
+    chains.splice(f.i, 1, ...[chn.slice(0, f.k), chn.slice(f.k + 1)].filter(x => x.length));
+    return true;
+  }
+  if (!drag.chain){
+    const f = findCell(chains, c, r);
+    if (f){ drag.chain = chains[f.i]; drag.cut = f.k; return false; }
+    drag.chain = [[c, r]]; chains.push(drag.chain); return true;
+  }
+  const chn = drag.chain;
+  if (drag.cut != null){ chn.length = drag.cut + 1; drag.cut = null; }
+  const n = chn.length;
+  if (n >= 2 && chn[n - 2][0] === c && chn[n - 2][1] === r){ chn.pop(); return true; }
+  if (findCell(chains, c, r)) return false;
+  const cap = S.drawLayer === 'power' ? R.cabPerCirc : R.cabPerPort;
+  if (n >= cap){
+    const label = (S.drawLayer === 'power' ? 'P' : 'D') + (chains.indexOf(chn) + 1);
+    toast(`${label} is full: ${cap} cabinet${cap === 1 ? '' : 's'} per ${S.drawLayer === 'power' ? 'circuit' : 'port'}`);
+    return true;
+  }
+  chn.push([c, r]); return true;
+}
+const stage = $('#stage');
+stage.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0 || !isManual()) return;
+  const pt = svgPt(ev), cell = cellAt(pt);
+  if (!cell) return;
+  ev.preventDefault();
+  stage.setPointerCapture(ev.pointerId);
+  pushUndo();
+  drag = {pt, lastCell: null, chain: null, cut: null, changed: false};
+  if (S.layer !== 'combined' && S.layer !== S.drawLayer) S.layer = S.drawLayer;
+  drag.changed = applyCell(cell);
+  render();
+});
+stage.addEventListener('pointermove', ev => {
+  if (!drag) return;
+  const pt = svgPt(ev);
+  if (!pt) return;
+  // Step along the pointer's path in small hops so a fast drag doesn't skip cabinets.
+  const step = Math.min(pos(R.P.w, 500), pos(R.P.h, 500)) * 0.2 || 100;
+  const dx = pt.x - drag.pt.x, dy = pt.y - drag.pt.y, hops = Math.max(1, Math.ceil(Math.hypot(dx, dy) / step));
+  let changed = false;
+  for (let i = 1; i <= hops; i++){
+    const cell = cellAt({x: drag.pt.x + dx * i / hops, y: drag.pt.y + dy * i / hops});
+    if (cell) changed = applyCell(cell) || changed;
+  }
+  drag.pt = pt;
+  if (changed){ drag.changed = true; render(); }
+});
+const endDrag = () => { if (!drag) return; if (!drag.changed) undoStack.pop(); drag = null; render(); };
+stage.addEventListener('pointerup', endDrag);
+stage.addEventListener('pointercancel', endDrag);
+$('#btnUndo').addEventListener('click', undo);
+$('#btnClear').addEventListener('click', () => {
+  const k = S.drawLayer === 'power' ? 'power' : 'data';
+  if (!S.manual[k].length) return;
+  pushUndo(); S.manual[k] = []; render();
+});
+// Auto-wire: copy the automatic pattern into the hand drawing so it can be edited.
+$('#btnAuto').addEventListener('click', () => {
+  const r = calc(), pw = S.drawLayer === 'power';
+  const chains = pw ? buildChains(r.wall.cols, r.wall.rows, r.cabPerCirc, S.powPat, S.powStart, S.powFill)
+                    : buildChains(r.wall.cols, r.wall.rows, r.cabPerPort, S.dataPat, S.dataStart, S.dataFill);
+  pushUndo();
+  S.manual[pw ? 'power' : 'data'] = chains.map(ch => ch.map(x => [x.c, x.r]));
+  S[pw ? 'powMode' : 'dataMode'] = 'manual';
+  if (S.layer !== 'combined' && S.layer !== S.drawLayer) S.layer = S.drawLayer;
+  render();
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !e.target.closest('input,select,textarea')){ e.preventDefault(); undo(); }
+});
+// Choosing which layer to wire also shows it, if the diagram was showing only the other one.
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-k="drawLayer"]') && S.layer !== 'combined' && S.layer !== S.drawLayer){ S.layer = S.drawLayer; render(); }
+});
 
 syncInputs();
 render();
