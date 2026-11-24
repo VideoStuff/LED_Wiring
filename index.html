@@ -386,7 +386,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 
 <script>
 'use strict';
-const APP_VERSION = '1.04';
+const APP_VERSION = '1.05';
 
 /* =====================================================================
    1. LIBRARY DATA
@@ -541,13 +541,15 @@ function calc(){
   // Ports, Brompton style: each processor's XDs are lettered A, B, C, D after the 10G output that feeds them.
   // Without data redundancy every XD is a main XD. With it they pair up: A main / B backup, C main / D backup,
   // and a run's backup return line uses the same port number on the backup XD (1A-1 and 1B-1).
-  // Ports follow the wall from the rear left (where the crew stands), so each XD serves one area of the wall
-  // and its cables fan out in order instead of crossing. Direct-port processors number ports 1, 2, 3… with backups after.
+  // Ports follow the wall: runs that start in the top half first, then the bottom half, each from the rear left
+  // (where the crew stands). So each XD tends to serve one area and one edge of the wall, and can be drawn on that edge,
+  // with its cables fanning out in order. Direct-port processors number ports 1, 2, 3… with backups after.
   // gi is the XD's number across all processors (the processor's own number for direct ports); it picks the color.
   let xdTotal = 0;
   for (const p of procs){
     const k = p.runs.length;
-    const ordered = isXd ? p.runs.slice().sort((a, b) => b.cells[0].c - a.cells[0].c || a.cells[0].r - b.cells[0].r) : p.runs;
+    const half = r => 2 * r.cells[0].r < rows - 1 ? 0 : 1;
+    const ordered = isXd ? p.runs.slice().sort((a, b) => half(a) - half(b) || b.cells[0].c - a.cells[0].c || a.cells[0].r - b.cells[0].r) : p.runs;
     ordered.forEach((r, j) => {
       if (isXd){
         const grp = Math.floor(j / ppx), port = j % ppx + 1, xi = S.dataRed ? 2 * grp : grp;
@@ -679,12 +681,13 @@ function wallSvg(R, o){
   const center = (c, off) => [X(c.c) + cw / 2 + off, c.r * ch + ch / 2 + off];
   const dOff = both ? -u * 0.14 : 0;
   const startPt = r => center(r.cells[0], dOff), endPt = r => center(r.cells[r.cells.length - 1], dOff);
-  const gear = o.gear && showData && R.runs.length ? gearSvg(R, {W, H, u, fs, startPt, endPt}) : null;
+  const gear = o.gear && showData && R.runs.length ? gearSvg(R, {W, H, u, fs, cols, rows, view: o.view, startPt, endPt}) : null;
   const vx = gear ? Math.min(-m, gear.minX) : -m, vw = (gear ? Math.max(W + m, gear.maxX) : W + m) - vx;
-  const vh = (gear ? gear.maxY : H + m) + m;
-  const vb = `${vx} ${-m} ${vw} ${vh}`;
+  const vy = gear ? Math.min(-m, gear.minY - m * 0.7) : -m;
+  const vh = (gear ? Math.max(H + m, gear.maxY + m * 0.4) : H + m) - vy;
+  const vb = `${vx} ${vy} ${vw} ${vh}`;
   let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" data-full="${vb}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${o.view === 'rear' ? 'Rear' : 'Front'} view wiring diagram, ${cols} by ${rows} cabinets">`;
-  s += `<rect class="w-bg" x="${vx}" y="${-m}" width="${vw}" height="${vh}"/>`;
+  s += `<rect class="w-bg" x="${vx}" y="${vy}" width="${vw}" height="${vh}"/>`;
   // Cabinets, tinted by XD (data) or circuit (power) when one layer is shown on its own.
   // Neighboring runs on the same XD alternate between a lighter and a stronger tint so each run still reads.
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++){
@@ -701,7 +704,7 @@ function wallSvg(R, o){
   // Column numbers above, row numbers on the left (front numbering), and which side we're looking at.
   for (let c = 0; c < cols; c++) s += `<text class="axis" x="${X(c) + cw / 2}" y="${-u * 0.12}" font-size="${fs}" text-anchor="middle">${c + 1}</text>`;
   for (let r = 0; r < rows; r++) s += `<text class="axis" x="${-u * 0.12}" y="${r * ch + ch / 2 + fs * 0.35}" font-size="${fs}" text-anchor="end">${r + 1}</text>`;
-  s += `<text class="viewtag" x="${W / 2}" y="${-m * 0.6}" font-size="${fs * 1.1}" text-anchor="middle">${o.view === 'rear' ? 'REAR VIEW · AS SEEN FROM BEHIND THE WALL' : 'FRONT VIEW · AS SEEN BY THE AUDIENCE'}</text>`;
+  s += `<text class="viewtag" x="${W / 2}" y="${vy + m * 0.45}" font-size="${fs * 1.1}" text-anchor="middle">${o.view === 'rear' ? 'REAR VIEW · AS SEEN FROM BEHIND THE WALL' : 'FRONT VIEW · AS SEEN BY THE AUDIENCE'}</text>`;
   if (gear) s += gear.cables;
 
   const chevrons = (pts, color, size) => {
@@ -751,31 +754,48 @@ function wallSvg(R, o){
   return s + labels + (gear ? gear.boxes : '') + '</svg>';
 }
 
-/* The processors and XD boxes, drawn under the wall: processors at the bottom, 10G fiber up to the XDs,
-   and a Cat6 home run from every XD port to the cabinet it plugs into (backups dashed, into the last cabinet).
-   Each XD is placed under the part of the wall it feeds, and each processor under its XDs.
-   Home runs climb into a cable channel under the wall, cross in their own lane, then go up to their cabinet.
-   Lanes are packed so a cable never has to cross another one from the same side of its XD. */
+/* The processors and XD boxes, drawn around the wall.
+   - Each XD goes on the top or bottom edge, whichever is nearer the cabinets it feeds, spread along that edge
+     so it sits by the part of the wall it serves. Each processor goes on the edge where most of its XDs are.
+   - Each cable enters the wall from the nearest edge: straight in from the top or bottom when its cabinet is
+     near the XD's edge, or up the outside of the wall and in from the left or right when its cabinet is on a side.
+     Only a cabinet deep inside the wall gets a cable through other cabinets.
+   - Cables run in lanes (along the top and bottom channels and up the sides), packed so cables leaving one
+     side of an XD don't cross each other. 10G fiber to an XD on the far edge goes around the outside of the wall. */
 function gearSvg(R, g){
-  const {W, H, u, fs} = g, red = S.dataRed, isXd = R.isXd, multi = R.procs.length > 1;
+  const {W, H, u, fs, cols, rows} = g, red = S.dataRed, isXd = R.isXd;
   const short = R.proc.short || R.proc.name;
-  const portW = u * 0.32, portH = u * 0.26, pg = u * 0.05, pad = u * 0.1;
+  const portW = u * 0.32, portH = u * 0.26, pg = u * 0.05, pad = u * 0.1, lane = u * 0.075, clear = u * 0.05;
   const slots = isXd ? R.ppx : R.portsPerProc;
   const boxW = n => n * portW + (n - 1) * pg + 2 * pad;
   const titleH = fs * 1.5, xdW = boxW(slots), xdH = pad * 2 + portH + titleH;
   const outs = isXd ? Math.max(1, R.trunks) : 0;
   const nProc = S.procRed ? 2 : 1, gapX = u * 0.3;
   const procW = isXd ? Math.max(boxW(outs), short.length * fs * 0.62 + fs * 4 + 2 * pad) : xdW, procH = xdH;
+  const xiOf = cell => g.view === 'rear' ? cols - 1 - cell.c : cell.c;
+  const mean = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : W / 2;
+  const edgeY = side => side === 'top' ? 0 : H, dir = side => side === 'top' ? -1 : 1;
+  const other = side => side === 'top' ? 'bottom' : 'top';
 
-  // Every cable: which port it leaves and where it plugs in.
+  // Cables: which port they leave and which cabinet they plug into.
   const cables = [];
   for (const r of R.runs){
-    cables.push({r, port: r.port, to: g.startPt(r), b: false});
-    if (red && r.bport) cables.push({r, port: r.bport, to: g.endPt(r), b: true});
+    cables.push({r, port: r.port, cell: r.cells[0], to: g.startPt(r), b: false});
+    if (red && r.bport) cables.push({r, port: r.bport, cell: r.cells[r.cells.length - 1], to: g.endPt(r), b: true});
   }
-  const key = pt => `${pt.proc}|${pt.xdi}`;
 
-  // Spread boxes along a row: each wants to sit centered on `want`; overlapping neighbors push each other apart.
+  // Port boxes (XDs, or processors with their own ports) and the edge each one goes on.
+  const pboxes = [];
+  const addBox = (p, xd, key, gi, mine) => {
+    const top = mine.filter(c => 2 * c.cell.r < rows - 1).length;
+    pboxes.push({p, xd, key, gi, w: xdW, mine, side: top > mine.length - top ? 'top' : 'bottom', want: mean(mine.map(c => c.to[0]))});
+  };
+  if (isXd) for (const p of R.procs) for (const xd of p.xdList) addBox(p, xd, `${p.i}|${xd.i}`, xd.gi, cables.filter(c => c.port.proc === p.i && c.port.xdi === xd.i));
+  else for (const p of R.procs) addBox(p, null, `${p.i}|-1`, p.i, cables.filter(c => c.port.proc === p.i));
+  const boxByKey = {};
+  for (const b of pboxes){ boxByKey[b.key] = b; for (const c of b.mine) c.box = b; }
+
+  // Spread boxes along an edge: each wants to sit centered on `want`; overlapping neighbors push each other apart.
   function spread(items, gap){
     items.sort((a, b) => a.want - b.want);
     for (const it of items) it.x = it.want - it.w / 2;
@@ -787,112 +807,176 @@ function gearSvg(R, g){
       }
       if (!moved) break;
     }
-    return items;
   }
-  const mean = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : W / 2;
-
-  // Port boxes: the XDs, or the processors themselves for direct ports.
-  const pboxes = [];
-  if (isXd) for (const p of R.procs) for (const xd of p.xdList){
-    const mine = cables.filter(c => c.port.proc === p.i && c.port.xdi === xd.i);
-    pboxes.push({p, xd, key: `${p.i}|${xd.i}`, w: xdW, want: mean(mine.map(c => c.to[0])), gi: xd.gi});
-  }
-  else for (const p of R.procs){
-    const mine = cables.filter(c => c.port.proc === p.i);
-    pboxes.push({p, key: `${p.i}|-1`, w: xdW, want: mean(mine.map(c => c.to[0])), gi: p.i});
-  }
-  spread(pboxes, gapX);
-  // Processor row (main + backup side by side), each under the middle of its own XDs.
+  for (const side of ['top', 'bottom']) spread(pboxes.filter(b => b.side === side), gapX);
+  // Processors: on the edge holding most of their XDs, under (or over) the middle of them.
   const prow = R.procs.map(p => {
-    const mineX = pboxes.filter(b => b.p === p).map(b => b.x + b.w / 2);
-    return {p, w: nProc * procW + (nProc - 1) * gapX, want: mean(mineX)};
+    const mine = pboxes.filter(b => b.p === p), top = mine.filter(b => b.side === 'top').length;
+    const side = top > mine.length - top ? 'top' : 'bottom';
+    const near = mine.filter(b => b.side === side);
+    return {p, side, w: nProc * procW + (nProc - 1) * gapX, want: mean((near.length ? near : mine).map(b => b.x + b.w / 2))};
   });
-  if (isXd) spread(prow, u * 0.6);
-  else prow.forEach(pr => { const b = pboxes.find(x => x.p === pr.p); pr.x = b.x + b.w / 2 - procW / 2; });
+  if (isXd) for (const side of ['top', 'bottom']) spread(prow.filter(pr => pr.side === side), u * 0.6);
+  else prow.forEach(pr => { const b = pboxes.find(x => x.p === pr.p); pr.side = b.side; pr.x = b.x + b.w / 2 - procW / 2; });
 
-  // Cable x positions at the port, and lanes.
-  const boxByKey = {};
-  for (const b of pboxes) boxByKey[b.key] = b;
+  // How each cable reaches its cabinet: from its XD's edge, from the left or right side, or around to the far edge.
   for (const c of cables){
-    const b = boxByKey[key(c.port)];
-    c.px = b ? b.x + pad + (c.port.port - 1) * (portW + pg) + portW / 2 : c.to[0];
+    const S0 = c.box.side, xi = xiOf(c.cell), r = c.cell.r;
+    const dS = S0 === 'top' ? r : rows - 1 - r, dO = rows - 1 - dS, dL = xi, dR = cols - 1 - xi;
+    // Straight in from the XD's edge, unless the cabinet sits on the left or right edge (then in from that side)
+    // or on the far edge's row (then around to that edge). A cabinet deep inside comes straight in from the XD's edge.
+    c.entry = dS === 0 ? 'same' : (dL === 0 || dR === 0) && Math.min(dL, dR) < dS ? (dL <= dR ? 'left' : 'right') : dO === 0 && cols > 1 ? 'opp' : 'same';
+    if (c.entry === 'opp') c.via = c.to[0] < W / 2 ? 'left' : 'right';
+    else if (c.entry !== 'same') c.via = c.entry;
+    c.px = c.box.x + pad + (c.port.port - 1) * (portW + pg) + portW / 2;
   }
-  // Cables ending in the same column get side-by-side verticals so they don't sit on top of each other.
+
+  // Side lanes, inner lane first. Cables to nearer rows take inner lanes, so they turn into the wall without crossing
+  // cables heading further along; cables going around to the far edge take the outer lanes.
+  const sideLanes = {left: [], right: []};
+  for (const via of ['left', 'right']){
+    const list = cables.filter(c => c.via === via);
+    const span = c => c.entry === 'opp' ? [-1e9, 1e9] : [Math.min(edgeY(c.box.side), c.to[1]), Math.max(edgeY(c.box.side), c.to[1])];
+    list.sort((a, b) => (a.entry === 'opp') - (b.entry === 'opp') || Math.abs(a.to[1] - edgeY(a.box.side)) - Math.abs(b.to[1] - edgeY(b.box.side)));
+    for (const c of list){
+      const [lo, hi] = span(c), L = sideLanes[via];
+      let li = 0;
+      while (L[li] && L[li].some(([a, b]) => lo - clear < b && hi + clear > a)) li++;
+      (L[li] ||= []).push([lo, hi]);
+      c.sx = via === 'left' ? -(u * 0.45 + (li + 0.5) * lane) : W + u * 0.15 + (li + 0.5) * lane;
+    }
+  }
+
+  // Cables ending in the same column (from the same edge) get side-by-side verticals.
   const byCol = {};
-  for (const c of cables) (byCol[Math.round(c.to[0])] ||= []).push(c);
+  for (const c of cables) if (c.entry === 'same' || c.entry === 'opp'){
+    const edge = c.entry === 'same' ? c.box.side : other(c.box.side);
+    (byCol[edge + Math.round(c.to[0])] ||= []).push(c);
+  }
   for (const list of Object.values(byCol)){
     list.sort((a, b) => a.px - b.px);
     list.forEach((c, i) => { c.tx = c.to[0] + (i - (list.length - 1) / 2) * u * 0.045; });
   }
-  // Lane packing, lowest lane first (lane 0 sits just above the XDs). Cables heading left are placed in order of
-  // their port from left to right, cables heading right from right to left; each takes the lowest lane it fits in.
-  const left = cables.filter(c => c.tx < c.px).sort((a, b) => a.px - b.px);
-  const right = cables.filter(c => c.tx >= c.px).sort((a, b) => b.px - a.px);
-  const lanes = [], clear = u * 0.05;
-  for (const c of [...left, ...right]){
-    const lo = Math.min(c.px, c.tx) - clear, hi = Math.max(c.px, c.tx) + clear;
-    let li = 0;
-    while (lanes[li] && lanes[li].some(([a, b]) => lo < b && hi > a)) li++;
-    (lanes[li] ||= []).push([lo, hi]);
-    c.lane = li;
+  for (const c of cables) if (c.tx == null) c.tx = c.to[0];
+
+  // Channel lanes along the top and bottom edges. Lane 0 is nearest the XDs. Legs heading left are placed by how
+  // far left they end (furthest first), legs heading right likewise; each takes the lowest lane it fits in.
+  const legs = {top: [], bottom: []};
+  for (const c of cables){
+    const end = c.entry === 'same' ? c.tx : c.sx;
+    legs[c.box.side].push({c, a: c.px, b: end, first: true});
+    if (c.entry === 'opp') legs[other(c.box.side)].push({c, a: c.sx, b: c.tx, first: false});
   }
-  const lane = u * 0.075, nl = Math.max(1, lanes.length);
-  const chanTop = H + u * 0.3, chanH = nl * lane;
-  const xdY = chanTop + chanH + u * 0.25, procY = isXd ? xdY + xdH + u * 0.9 : xdY;
+  const nLanes = {};
+  for (const side of ['top', 'bottom']){
+    const L = [], list = legs[side];
+    const lefts = list.filter(l => l.b < l.a).sort((x, y) => x.b - y.b), rights = list.filter(l => l.b >= l.a).sort((x, y) => y.b - x.b);
+    for (const l of [...lefts, ...rights]){
+      const lo = Math.min(l.a, l.b) - clear, hi = Math.max(l.a, l.b) + clear;
+      let li = 0;
+      while (L[li] && L[li].some(([a, b]) => lo < b && hi > a)) li++;
+      (L[li] ||= []).push([lo, hi]);
+      l.lane = li;
+    }
+    nLanes[side] = L.length;
+  }
+  // Positions out from each edge: channel, then XDs, then processors.
+  const geo = {};
+  for (const side of ['top', 'bottom']){
+    const d = dir(side), e = edgeY(side), n = nLanes[side];
+    const laneY = k => e + d * (u * 0.3 + (n - 1 - k + 0.5) * lane);
+    const hasXd = pboxes.some(b => b.side === side);
+    const xdInner = e + d * (u * 0.3 + n * lane + u * 0.25);
+    const procInner = isXd ? (hasXd ? xdInner + d * (xdH + u * 0.9) : xdInner) : xdInner;
+    geo[side] = {d, laneY, xdInner, procInner};
+  }
+  for (const side of ['top', 'bottom']) for (const l of legs[side]){
+    if (l.first) l.c.y1 = geo[side].laneY(l.lane); else l.c.y2 = geo[side].laneY(l.lane);
+  }
+  // A box's top-left corner, its port row and its outer face, for either edge.
+  const place = (side, inner, h) => {
+    const top = side === 'top', by = top ? inner - h : inner;
+    return {by, portY: top ? by + h - pad - portH : by + pad, titleY: top ? by + pad + fs * 0.85 : by + h - pad * 0.9,
+      innerY: inner, outerY: top ? by : by + h};
+  };
 
   let boxes = '', fiber = '', cab = '';
-  const box = (bx, by, w, h, title, dashed, col) =>
-    `<rect class="gear-box" x="${bx}" y="${by}" width="${w}" height="${h}" rx="${u * 0.04}" stroke-width="${u * (col ? 0.022 : 0.014)}"${col ? ` style="stroke:${col}"` : ''}${dashed ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}/>`
-    + `<text class="gear-t" x="${bx + pad}" y="${by + h - pad * 0.9}" font-size="${fs * 0.95}"${col ? ` style="fill:${col}"` : ''}>${esc(title)}</text>`;
+  const frame = (bx, pl, w, h, title, dashed, col) =>
+    `<rect class="gear-box" x="${bx}" y="${pl.by}" width="${w}" height="${h}" rx="${u * 0.04}" stroke-width="${u * (col ? 0.022 : 0.014)}"${col ? ` style="stroke:${col}"` : ''}${dashed ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}/>`
+    + `<text class="gear-t" x="${bx + pad}" y="${pl.titleY}" font-size="${fs * 0.95}"${col ? ` style="fill:${col}"` : ''}>${esc(title)}</text>`;
 
-  // Processors and their lettered 10G outputs.
+  // XD boxes (or the processor's own ports), outlined in their color, each used port filled in that color.
+  const used = {};
+  for (const c of cables) used[`${c.port.proc}|${c.port.xdi}|${c.port.port}`] = c;
+  for (const b of pboxes){
+    const col = xdColor(b.gi), bk = b.xd && b.xd.role === 'backup';
+    const pl = place(b.side, isXd ? geo[b.side].xdInner : geo[b.side].procInner, xdH);
+    b.pl = pl;
+    if (isXd) boxes += frame(b.x, pl, b.w, xdH, `XD ${b.xd.letter} · #${b.p.i + 1}${red ? (bk ? ' · backup' : ' · main') : ''}`, bk, col);
+    else boxes += `<rect x="${b.x}" y="${pl.by}" width="${b.w}" height="${xdH}" rx="${u * 0.04}" fill="none" stroke="${col}" stroke-width="${u * 0.022}"/>`;
+    for (let q = 1; q <= slots; q++){
+      const px = b.x + pad + (q - 1) * (portW + pg), c = used[`${b.key}|${q}`];
+      boxes += c
+        ? `<rect x="${px}" y="${pl.portY}" width="${portW}" height="${portH}" rx="${u * 0.02}" fill="${col}"><title>${portLabel(c.port, R)} · ${c.r.label}${c.b ? ' backup' : ''} · ${c.r.cells.length} cabinets · ${pct(c.r.load)}</title></rect>`
+          + `<text class="gear-pt" x="${px + portW / 2}" y="${pl.portY + portH * 0.72}" font-size="${fs * 0.8}" text-anchor="middle" fill="#111" pointer-events="none">${q}</text>`
+        : `<rect class="gear-port" x="${px}" y="${pl.portY}" width="${portW}" height="${portH}" rx="${u * 0.02}" stroke-width="${u * 0.01}"/>`
+          + `<text x="${px + portW / 2}" y="${pl.portY + portH * 0.68}" font-size="${fs * 0.6}" text-anchor="middle" fill="var(--stage-muted)" font-family="var(--f-mono)">${q}</text>`;
+    }
+  }
+
+  // Home runs, in the XD's color (backups dashed).
+  for (const c of cables){
+    const side = c.box.side, py = side === 'top' ? c.box.pl.portY + portH : c.box.pl.portY;
+    let pts = [[c.px, py], [c.px, c.y1]];
+    if (c.entry === 'same') pts.push([c.tx, c.y1], [c.tx, c.to[1]]);
+    else if (c.entry === 'opp') pts.push([c.sx, c.y1], [c.sx, c.y2], [c.tx, c.y2], [c.tx, c.to[1]]);
+    else pts.push([c.sx, c.y1], [c.sx, c.to[1]], [c.to[0], c.to[1]]);
+    cab += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${xdColor(c.port.gi)}" stroke-width="${u * 0.02}" stroke-opacity=".85" stroke-linejoin="round"${c.b ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}><title>${portLabel(c.port, R)} · ${c.r.label}${c.b ? ' backup' : ''}</title></polyline>`;
+  }
+
+  // Processors with their lettered 10G outputs, and fiber to each XD of the same letter
+  // (the backup processor into the XD's second input, dashed; around the outside of the wall for an XD on the far edge).
+  const sideXs = cables.filter(c => c.sx != null).map(c => c.sx);
+  const outerL = Math.min(-u * 0.45, ...sideXs) - u * 0.3, outerR = Math.max(W + u * 0.15, ...sideXs) + u * 0.3;
+  let fiberN = 0;
+  const allX = [], allY = [];
   for (const pr of prow){
-    const p = pr.p;
+    const p = pr.p, pl = place(pr.side, geo[pr.side].procInner, procH);
+    allY.push(pl.by, pl.by + procH);
     for (let b = 0; b < nProc; b++){
       const bx = pr.x + b * (procW + gapX);
-      boxes += box(bx, procY, procW, procH, `${short} #${p.i + 1}${b ? ' · backup' : ''}`, b === 1);
+      allX.push(bx, bx + procW);
+      boxes += frame(bx, pl, procW, procH, `${short} #${p.i + 1}${b ? ' · backup' : ''}`, b === 1);
       if (!isXd) continue;
       for (let k = 0; k < outs; k++){
-        const ox = bx + pad + k * (portW + pg), used = k < p.xds;
-        boxes += `<rect x="${ox}" y="${procY + pad}" width="${portW}" height="${portH}" rx="${u * 0.02}" fill="${used ? 'var(--fiber)' : 'none'}" stroke="${used ? 'var(--fiber)' : 'var(--cab-line)'}" stroke-width="${u * 0.012}"/>`
-          + `<text class="gear-pt" x="${ox + portW / 2}" y="${procY + pad + portH * 0.72}" font-size="${fs * 0.8}" text-anchor="middle" fill="${used ? '#111' : 'var(--stage-muted)'}">${xdLetter(k)}</text>`;
+        const ox = bx + pad + k * (portW + pg), on = k < p.xds;
+        boxes += `<rect x="${ox}" y="${pl.portY}" width="${portW}" height="${portH}" rx="${u * 0.02}" fill="${on ? 'var(--fiber)' : 'none'}" stroke="${on ? 'var(--fiber)' : 'var(--cab-line)'}" stroke-width="${u * 0.012}"/>`
+          + `<text class="gear-pt" x="${ox + portW / 2}" y="${pl.portY + portH * 0.72}" font-size="${fs * 0.8}" text-anchor="middle" fill="${on ? '#111' : 'var(--stage-muted)'}">${xdLetter(k)}</text>`;
       }
-      // 10G fiber from each output to the XD of the same letter (the backup processor into the XD's second input, dashed).
       p.xdList.forEach((xd, k) => {
         const xb = boxByKey[`${p.i}|${xd.i}`];
         if (!xb) return;
         const ox = bx + pad + k * (portW + pg) + portW / 2, ix = xb.x + xb.w / 2 + (nProc > 1 ? (b ? 1 : -1) * u * 0.18 : 0);
-        const my = xdY + xdH + (procY - xdY - xdH) * (b ? 0.65 : 0.35) + (k - (p.xds - 1) / 2) * u * 0.035;
-        fiber += `<path d="M${ox} ${procY} V${my} H${ix} V${xdY + xdH}" fill="none" stroke="var(--fiber)" stroke-width="${u * 0.022}"${b ? ` stroke-dasharray="${u * 0.06} ${u * 0.04}"` : ''}><title>10G fiber · ${esc(short)} #${p.i + 1}${b ? ' backup' : ''} output ${xd.letter} → XD ${xd.letter}</title></path>`;
-        boxes += `<rect x="${ix - u * 0.05}" y="${xdY + xdH - u * 0.05}" width="${u * 0.1}" height="${u * 0.1}" fill="var(--fiber)"/>`;
+        const g0 = geo[pr.side], dash = b ? ` stroke-dasharray="${u * 0.06} ${u * 0.04}"` : '';
+        let pts;
+        if (xb.side === pr.side){
+          const my = (pl.innerY + xb.pl.outerY) / 2 + g0.d * ((b ? 0.15 : -0.15) * u + (k - (p.xds - 1) / 2) * u * 0.035);
+          pts = [[ox, pl.innerY], [ox, my], [ix, my], [ix, xb.pl.outerY]];
+        } else {
+          const n = fiberN++, fx = ix < W / 2 ? outerL - n * u * 0.06 : outerR + n * u * 0.06;
+          const y1 = pl.innerY - g0.d * (u * 0.3 + n * u * 0.04), g1 = geo[xb.side], y2 = xb.pl.outerY + g1.d * (u * 0.3 + n * u * 0.04);
+          pts = [[ox, pl.innerY], [ox, y1], [fx, y1], [fx, y2], [ix, y2], [ix, xb.pl.outerY]];
+          allX.push(fx); allY.push(y2);
+        }
+        fiber += `<polyline points="${pts.map(q => q.join(',')).join(' ')}" fill="none" stroke="var(--fiber)" stroke-width="${u * 0.022}" stroke-linejoin="round"${dash}><title>10G fiber · ${esc(short)} #${p.i + 1}${b ? ' backup' : ''} output ${xd.letter} → XD ${xd.letter}</title></polyline>`;
+        boxes += `<rect x="${ix - u * 0.05}" y="${xb.pl.outerY - u * 0.05}" width="${u * 0.1}" height="${u * 0.1}" fill="var(--fiber)"/>`;
       });
     }
   }
-
-  // XD boxes (or the processor's own ports), outlined in their color, with each used port filled in that color.
-  const used = {};
-  for (const c of cables) used[`${key(c.port)}|${c.port.port}`] = c;
-  for (const b of pboxes){
-    const col = xdColor(b.gi), bk = b.xd && b.xd.role === 'backup', by = isXd ? xdY : procY;
-    if (isXd) boxes += box(b.x, by, b.w, xdH, `XD ${b.xd.letter} · #${b.p.i + 1}${red ? (bk ? ' · backup' : ' · main') : ''}`, bk, col);
-    else boxes += `<rect x="${b.x}" y="${by}" width="${b.w}" height="${xdH}" rx="${u * 0.04}" fill="none" stroke="${col}" stroke-width="${u * 0.022}"/>`;
-    for (let q = 1; q <= slots; q++){
-      const px = b.x + pad + (q - 1) * (portW + pg), c = used[`${b.key}|${q}`];
-      boxes += c
-        ? `<rect x="${px}" y="${by + pad}" width="${portW}" height="${portH}" rx="${u * 0.02}" fill="${col}"><title>${portLabel(c.port, R)} · ${c.r.label}${c.b ? ' backup' : ''} · ${c.r.cells.length} cabinets · ${pct(c.r.load)}</title></rect>`
-          + `<text class="gear-pt" x="${px + portW / 2}" y="${by + pad + portH * 0.72}" font-size="${fs * 0.8}" text-anchor="middle" fill="#111" pointer-events="none">${q}</text>`
-        : `<rect class="gear-port" x="${px}" y="${by + pad}" width="${portW}" height="${portH}" rx="${u * 0.02}" stroke-width="${u * 0.01}"/>`
-          + `<text x="${px + portW / 2}" y="${by + pad + portH * 0.68}" font-size="${fs * 0.6}" text-anchor="middle" fill="var(--stage-muted)" font-family="var(--f-mono)">${q}</text>`;
-    }
-  }
-
-  // Home runs in the XD's color: up from the port to the cable's lane, across, and up the column to the cabinet.
-  for (const c of cables){
-    const ly = xdY - u * 0.25 - (c.lane + 0.5) * lane, col = xdColor(c.port.gi);
-    cab += `<path d="M${c.px} ${xdY + pad} V${ly} H${c.tx} V${c.to[1]}" fill="none" stroke="${col}" stroke-width="${u * 0.02}" stroke-opacity=".8" stroke-linejoin="round"${c.b ? ` stroke-dasharray="${u * 0.05} ${u * 0.035}"` : ''}><title>${portLabel(c.port, R)} · ${c.r.label}${c.b ? ' backup' : ''}</title></path>`;
-  }
-  const allX = [...pboxes.map(b => [b.x, b.x + b.w]), ...prow.map(pr => [pr.x, pr.x + pr.w])].flat();
-  return {cables: cab + fiber, boxes, minX: Math.min(...allX) - u * 0.3, maxX: Math.max(...allX) + u * 0.3, maxY: procY + procH + u * 0.2};
+  for (const b of pboxes){ allX.push(b.x, b.x + b.w); allY.push(b.pl.by, b.pl.by + xdH); }
+  allX.push(...sideXs);
+  return {cables: cab + fiber, boxes, minX: Math.min(...allX) - u * 0.3, maxX: Math.max(...allX) + u * 0.3,
+    minY: Math.min(0, ...allY) - u * 0.2, maxY: Math.max(H, ...allY) + u * 0.2};
 }
 
 function legendHtml(){
