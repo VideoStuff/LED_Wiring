@@ -386,7 +386,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 
 <script>
 'use strict';
-const APP_VERSION = '1.05';
+const APP_VERSION = '1.06';
 
 /* =====================================================================
    1. LIBRARY DATA
@@ -589,6 +589,20 @@ function calc(){
     const w = cells.length * maxW, t = cells.length * typW;
     return {i, label:'P' + (i + 1), cells, maxW: w, typW: t, ampsMax: w / (V * pf), ampsTyp: t / (V * pf), phase: PAIRS[i % PAIRS.length], load: w / (V * pf) / breaker};
   });
+  // Power cables are red or yellow, alternating along the wall so neighboring circuits never share a color.
+  // Each circuit takes red unless it touches a red circuit already colored; if it touches both colors,
+  // it takes the one it shares fewer cabinet edges with.
+  const owner = {};
+  circuits.forEach(p => p.cells.forEach(c => owner[c.c + ',' + c.r] = p));
+  for (const p of circuits){
+    const touch = {red: 0, yellow: 0};
+    for (const c of p.cells) for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
+      const q = owner[(c.c + dc) + ',' + (c.r + dr)];
+      if (q && q !== p && q.tone) touch[q.tone]++;
+    }
+    p.tone = !touch.red ? 'red' : !touch.yellow ? 'yellow' : touch.red <= touch.yellow ? 'red' : 'yellow';
+    p.color = POWER_TONES[p.tone];
+  }
   // Current on each leg of the distro.
   // 120 V: each circuit is one leg to neutral. 208 V 1-phase: both legs carry the full current.
   // 208 V 3-phase: each leg carries two of the line-to-line loads, 120° apart: I = √(a² + b² + a·b).
@@ -663,7 +677,8 @@ const voltName = v => v === '120' ? '120 V' : v === '208-1' ? '208 V 1-phase' : 
 const XD_COLORS = ['#38C6F4', '#F2668B', '#9BD35A', '#FF9F43', '#B68CFF', '#3FD9C2', '#FF6B5A', '#7FA8FF', '#E58BE8', '#5EE07F'];
 const xdColor = gi => XD_COLORS[gi] || `hsl(${(200 + gi * 137.508) % 360} 75% 62%)`;
 const runColor = r => xdColor(r.port ? r.port.gi : 0);
-const powColor = i => `hsl(${(28 + i * 137.508) % 360} 88% 54%)`;
+const POWER_TONES = {red: '#E5484D', yellow: '#F5D90A'};
+const powColor = p => p.color || POWER_TONES.red;
 
 /* =====================================================================
    5. WIRING DIAGRAM (SVG, in millimeters so it stays to scale)
@@ -694,7 +709,7 @@ function wallSvg(R, o){
     const key = c + ',' + r, d = runOf[key], p = circOf[key];
     let fill = '';
     if (o.layer === 'data' && d) fill = ` style="fill:${runColor(d.r)};fill-opacity:${d.r.i % 2 ? .3 : .16}"`;
-    if (o.layer === 'power' && p) fill = ` style="fill:${powColor(p.p.i)};fill-opacity:.18"`;
+    if (o.layer === 'power' && p) fill = ` style="fill:${powColor(p.p)};fill-opacity:.2"`;
     const tip = `Cabinet ${c + 1},${r + 1}` + (d ? ` · ${d.r.label} (${portLabel(d.r.port, R)}) #${d.k + 1}` : '') + (p ? ` · ${p.p.label} #${p.k + 1}` : '');
     const g = u * 0.014;
     s += `<rect class="cab" x="${X(c) + g}" y="${r * ch + g}" width="${cw - 2 * g}" height="${ch - 2 * g}" stroke-width="${u * 0.014}"${fill}><title>${tip}</title></rect>`;
@@ -726,7 +741,7 @@ function wallSvg(R, o){
   if (showPow){
     const off = both ? u * 0.16 : 0;
     for (const p of R.circuits){
-      const col = powColor(p.i), pts = p.cells.map(c => center(c, off));
+      const col = powColor(p), pts = p.cells.map(c => center(c, off));
       s += `<polyline points="${poly(pts)}" fill="none" stroke="${col}" stroke-width="${u * 0.085}" stroke-opacity=".75" stroke-linecap="round" stroke-linejoin="round"/>`;
       for (const [x, y] of pts) s += `<circle cx="${x}" cy="${y}" r="${u * 0.06}" fill="${col}"/>`;
       s += `<rect x="${pts[0][0] - u * 0.09}" y="${pts[0][1] - u * 0.09}" width="${u * 0.18}" height="${u * 0.18}" fill="${col}" stroke="#000" stroke-width="${u * 0.012}"><title>${p.label} power in</title></rect>`;
@@ -994,7 +1009,7 @@ function legendHtml(){
       }
     }
   }
-  if (S.layer !== 'data') h += `<span>${sw('<line x1="4" y1="6" x2="30" y2="6" stroke="hsl(28 88% 54%)" stroke-width="5" stroke-linecap="round" opacity=".75"/><rect x="1" y="2" width="8" height="8" fill="hsl(28 88% 54%)"/>')}Power circuit (square = power in)</span>`;
+  if (S.layer !== 'data') h += `<span>${sw('<line x1="4" y1="6" x2="30" y2="6" stroke="#E5484D" stroke-width="5" stroke-linecap="round" opacity=".75"/><rect x="1" y="2" width="8" height="8" fill="#E5484D"/>')}${sw('<line x1="4" y1="6" x2="30" y2="6" stroke="#F5D90A" stroke-width="5" stroke-linecap="round" opacity=".75"/><rect x="1" y="2" width="8" height="8" fill="#F5D90A"/>')}Power circuits, alternating red and yellow (square = power in)</span>`;
   if (isManual()) h += `<span>${sw('<rect x="2" y="1" width="30" height="10" fill="none" stroke="var(--warn)" stroke-dasharray="3 2"/>')}Not wired yet (${S.drawLayer})</span>`;
   h += `<span>Cabinet numbers count from the front-left: column, row.</span>`;
   return h;
@@ -1049,7 +1064,7 @@ function dataHtml(R){
 function powerHtml(R){
   let h = `<p class="hint" style="margin-bottom:8px">${fx(R.breaker, 0)} A breaker × ${Math.round(R.safety * 100)}% = ${fx(R.usableA)} A usable × ${R.V} V${R.pf < 1 ? ` × PF ${R.pf}` : ''} = ${fmt(R.usableW)} W per circuit · up to ${R.cabPerCirc} cabinets (${fmt(pos(R.P.maxW))} W max each).</p>`;
   h += `<div class="tblwrap"><table class="t"><thead><tr><th>Circuit</th><th>Leg</th><th class="n">Cabinets</th><th>First → last</th><th class="n">Max W</th><th class="n">Max A</th><th class="n">Typical A</th><th class="n">Breaker load</th></tr></thead><tbody>`;
-  for (const p of R.circuits) h += `<tr><td><span class="sw" style="background:${powColor(p.i)}"></span>${p.label}</td><td class="mono">${p.phase}</td><td class="n">${p.cells.length}</td><td class="mono">${cabName(p.cells[0])} → ${cabName(p.cells[p.cells.length - 1])}</td><td class="n">${fmt(p.maxW)}</td><td class="n">${fx(p.ampsMax)}</td><td class="n">${fx(p.ampsTyp)}</td><td class="n">${pct(p.load)}</td></tr>`;
+  for (const p of R.circuits) h += `<tr><td><span class="sw" style="background:${powColor(p)}"></span>${p.label}</td><td class="mono">${p.phase}</td><td class="n">${p.cells.length}</td><td class="mono">${cabName(p.cells[0])} → ${cabName(p.cells[p.cells.length - 1])}</td><td class="n">${fmt(p.maxW)}</td><td class="n">${fx(p.ampsMax)}</td><td class="n">${fx(p.ampsTyp)}</td><td class="n">${pct(p.load)}</td></tr>`;
   h += `<tr class="tot"><td>${R.circuits.length} circuits</td><td>${R.drops} drop${R.drops === 1 ? '' : 's'}</td><td class="n">${fmt(R.wall.n)}</td><td></td><td class="n">${fmt(R.W.max)}</td><td class="n">${fx(R.circuits.reduce((s, p) => s + p.ampsMax, 0))}</td><td class="n">${fx(R.circuits.reduce((s, p) => s + p.ampsTyp, 0))}</td><td></td></tr>`;
   return h + '</tbody></table></div>' + legsHtml(R);
 }
